@@ -1,9 +1,8 @@
 import { QuickLink, QuickLinksProps } from "@/types";
 import { useTheme } from "@/hooks/useTheme";
 import { useState, useEffect, useRef } from "react";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import { LinkModal } from "./LinkModal";
+import { toast } from "sonner";
 
 // 从枚举中导入存储键名
 import { QUICK_LINKS_STORAGE_KEY } from '@/enum/quickLinks';
@@ -77,56 +76,8 @@ export const QuickLinks: React.FC<QuickLinksProps> = (
         }
     }, [propQuickLinks]);
 
-    const getLinkInfo = (name: string) => {
-        switch (name.toLowerCase()) {
-        case "google":
-            return {
-                icon: "fa-google",
-                color: "text-blue-500",
-                url: "https://www.google.com"
-            };
-        case "github":
-            return {
-                icon: "fa-github",
-                color: isDark ? "text-white" : "text-gray-800",
-                url: "https://www.github.com"
-            };
-        case "youtube":
-            return {
-                icon: "fa-youtube",
-                color: "text-red-600",
-                url: "https://www.youtube.com"
-            };
-        case "stack overflow":
-            return {
-                icon: "fa-stack-overflow",
-                color: "text-orange-500",
-                url: "https://stackoverflow.com"
-            };
-        case "掘金":
-            return {
-                icon: "fa-diamond",
-                color: "text-orange-500",
-                url: "https://juejin.cn"
-            };
-        case "知乎":
-            return {
-                icon: "fa-comments",
-                color: "text-blue-600",
-                url: "https://www.zhihu.com"
-            };
-        default:
-            return {
-                icon: "fa-link",
-                color: isDark ? "text-blue-400" : "text-blue-600",
-                url: ""
-            };
-        }
-    };
-
     const openLink = (link: QuickLink) => {
-        const linkInfo = getLinkInfo(link.name);
-        const url = link.url || linkInfo.url || "https://www.google.com";
+        const url = link.url || "https://www.google.com";
         let finalUrl = url;
 
         if (!url.startsWith("http://") && !url.startsWith("https://")) {
@@ -201,12 +152,6 @@ export const QuickLinks: React.FC<QuickLinksProps> = (
                 padding: "8px"
             }}>
          {propQuickLinks.map(link => {
-                const linkInfo = getLinkInfo(link.name);
-                const isCustomIcon = link.icon && link.icon.includes("fa-");
-                const iconToUse = isCustomIcon ? link.icon : linkInfo.icon;
-                const iconPrefix = iconToUse.startsWith("fa-github") || iconToUse.startsWith("fa-google") || iconToUse.startsWith("fa-youtube") || iconToUse.startsWith("fa-facebook") || iconToUse.startsWith("fa-twitter") || iconToUse.startsWith("fa-instagram") || iconToUse.startsWith("fa-linkedin") || iconToUse.startsWith("fa-amazon") || iconToUse.startsWith("fa-apple") || iconToUse.startsWith("fa-microsoft") || iconToUse.startsWith("fa-weibo") || iconToUse.startsWith("fa-weixin") || iconToUse.startsWith("fa-spotify") || iconToUse.startsWith("fa-twitch") ? "fab" : "fas";
-                const finalIconClass = iconToUse && iconToUse.includes("fa-") ? iconToUse : "fa-link";
-
                 return (
                     <div
                         key={link.id}
@@ -215,7 +160,7 @@ export const QuickLinks: React.FC<QuickLinksProps> = (
                          onContextMenu={e => handleContextMenu(link, e)}>
                         <div
                             className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-all duration-300 ${isDark ? "bg-white/10 group-hover:bg-white/20" : "bg-gray-100 group-hover:bg-gray-200"}`}>
-                            <span className={`text-2xl font-bold ${linkInfo.color}`}>
+                            <span className={`text-2xl font-bold ${link.color}`}>
                                 {link.name && link.name.charAt(0).toUpperCase()}
                             </span>
                         </div>
@@ -226,7 +171,6 @@ export const QuickLinks: React.FC<QuickLinksProps> = (
                     </div>
                 );
             })}
-            {}
             <div
                 className="flex flex-col items-center cursor-pointer transition-all duration-300 hover:scale-110 group"
                 onClick={() => {
@@ -242,7 +186,6 @@ export const QuickLinks: React.FC<QuickLinksProps> = (
                     className={`text-sm font-medium truncate max-w-[100px] ${isDark ? "text-white/90" : "text-gray-700"}`}>添加链接
                                         </span>
             </div>
-            {}
             {contextMenuVisible && selectedLink && <div
                 className={`fixed z-50 rounded-xl shadow-xl transition-all duration-200 transform scale-100 opacity-100 ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} border overflow-hidden`}
                 style={{
@@ -262,7 +205,7 @@ export const QuickLinks: React.FC<QuickLinksProps> = (
                     <i className="fas fa-trash-alt text-red-500"></i>删除
                                   </button>
             </div>}
-            {}
+
             <LinkModal
                 show={showLinkModal}
                 mode={modalMode}

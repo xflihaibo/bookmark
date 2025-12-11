@@ -1,10 +1,10 @@
-import { EnterpriseLinksGridProps } from "@/types";
+import { EnterpriseLinksGridProps, EnterpriseLink } from "@/types";
 
 export const EnterpriseLinksGrid: React.FC<EnterpriseLinksGridProps> = ({
   enterpriseLinks,
   isDark
 }) => {
-  const linksByCategory: Record<string, typeof enterpriseLinks> = {};
+  const linksByCategory: Record<string, EnterpriseLink[]> = {};
 
   enterpriseLinks.forEach(link => {
     const category = link.category || "未分类";

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect} from "react";
 import { toast } from "sonner";
 import { MenuItem, MenuModalProps } from "@/types";
 import { useTheme } from "@/hooks/useTheme";
@@ -21,6 +21,10 @@ export const MenuModal: React.FC<MenuModalProps> = (
     const [menuName, setMenuName] = useState(mode === "edit" && selectedMenuItem ? selectedMenuItem.label : "");
     const [selectedIcon, setSelectedIcon] = useState(mode === "edit" && selectedMenuItem ? selectedMenuItem.icon : "fa-plus");
 
+    useEffect(() => {
+        setMenuName(mode === "edit" && selectedMenuItem ? selectedMenuItem.label : "");
+        setSelectedIcon(mode === "edit" && selectedMenuItem ? selectedMenuItem.icon : "fa-plus");
+    }, [mode])
     // 从枚举中导入可用图标
 
     if (!show)

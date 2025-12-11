@@ -1,38 +1,31 @@
-// 导入独立的企业链接网格组件
-import { EnterpriseLinksGrid } from "@/components/EnterpriseLinksGrid";
-
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { useTheme } from "@/hooks/useTheme";
 import { Sidebar } from "@/components/Sidebar";
-import { TodoPanel } from "@/components/TodoPanel";
-import { QuickLinks } from "@/components/QuickLinks";
-import { BookmarksGrid } from "@/components/BookmarksGrid";
-import { SettingsPanel } from "@/components/SettingsPanel";
-import { CalendarModal } from "@/components/CalendarModal";
-import { MenuModal } from "@/components/MenuModal";
-import { MenuItem, QuickLink } from "@/types";
-import { quickLinksData, bookmarksData, initialMenuItems, defaultBackgroundImage } from "@/data";
+import { MenuItem, QuickLink,BookmarkCategory } from "@/types";
+import { quickLinksData,  initialMenuItems, defaultBackgroundImage } from "@/data";//bookmarksData
+
 import { useEnterpriseLinks } from "@/hooks/useEnterpriseLinks";
 import { useDateTime } from "@/hooks/useDateTime";
 import { useSearch } from "@/hooks/useSearch";
 import { searchEngines } from "@/enum/searchEngines";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { PanelSkeleton, ModalSkeleton, GridSkeleton } from "@/components/Fallbacks";
+import { UI_STORAGE_KEYS } from "@/enum/ui";
+
+
+// 懒加载重组件，降低首屏体积
+const TodoPanel = lazy(() => import("@/components/TodoPanel").then(m => ({ default: m.TodoPanel })));
+const CalendarModal = lazy(() => import("@/components/CalendarModal").then(m => ({ default: m.CalendarModal })));
+const SettingsPanel = lazy(() => import("@/components/SettingsPanel").then(m => ({ default: m.SettingsPanel })));
+const BookmarksGrid = lazy(() => import("@/components/BookmarksGrid").then(m => ({ default: m.BookmarksGrid })));
+const EnterpriseLinksGrid = lazy(() => import("@/components/EnterpriseLinksGrid").then(m => ({ default: m.EnterpriseLinksGrid })));
+const MenuModal = lazy(() => import("@/components/MenuModal").then(m => ({ default: m.MenuModal })));
+const QuickLinks = lazy(() => import("@/components/QuickLinks").then(m => ({ default: m.QuickLinks })));
 
 export default function Home() {
-    const {
-        isDark,
-        toggleTheme
-    } = useTheme();
-
-    const {
-        enterpriseLinks
-    } = useEnterpriseLinks();
-
-    const {
-        currentTime,
-        currentDate,
-        hasTodayEvents
-    } = useDateTime();
-
+    const { isDark, toggleTheme } = useTheme();
+    const { enterpriseLinks } = useEnterpriseLinks();
+    const { currentTime, currentDate, hasTodayEvents } = useDateTime();
     const {
         searchQuery,
         setSearchQuery,
@@ -43,65 +36,145 @@ export default function Home() {
         handleSearch
     } = useSearch();
 
+    const [bookmarksData, setBookmarksData]=useState<BookmarkCategory[]>([])
     const [showTodoPanel, setShowTodoPanel] = useState(false);
     const [showSettingsPanel, setShowSettingsPanel] = useState(false);
     const [showMenuModal, setShowMenuModal] = useState(false);
     const [showCalendarModal, setShowCalendarModal] = useState(false);
-    const [sidebarMode, setSidebarMode] = useState<"always" | "hover">("always");
-    const [activeMenuItem, setActiveMenuItem] = useState("home");
-    const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
-    const [quickLinks, setQuickLinks] = useState<QuickLink[]>(quickLinksData);
+    const [sidebarMode, setSidebarMode] = useState<"always" | "hover">(() => {
+    const saved = localStorage.getItem(UI_STORAGE_KEYS.SIDEBAR_MODE);
+    return (saved === "hover" || saved === "always") ? (saved as "always" | "hover") : "always";
+  });
+    const [activeMenuItem, setActiveMenuItem] = useState<string>(() => {
+        const saved = localStorage.getItem(UI_STORAGE_KEYS.ACTIVE_MENU_ITEM);
+        return saved || "home";
+    });
+    // 优先从localStorage获取菜单数据，如果没有则使用默认数据
+    const getInitialMenuItems = () => {
+        const savedMenuItems = localStorage.getItem(UI_STORAGE_KEYS.MENU_ITEMS);
+        return savedMenuItems ? JSON.parse(savedMenuItems) : initialMenuItems;
+    };
+    
+    // 优先从localStorage获取快捷链接数据，如果没有则使用默认数据
+    const getInitialQuickLinks = () => {
+        const savedQuickLinks = localStorage.getItem(UI_STORAGE_KEYS.QUICK_LINKS);
+        if (savedQuickLinks) {
+            const parsedLinks = JSON.parse(savedQuickLinks);
+            // 处理可能存在的重复ID问题
+            const uniqueLinks = fixDuplicateIds(parsedLinks);
+            // 如果进行了修复，更新localStorage
+            if (uniqueLinks.length !== parsedLinks.length) {
+                localStorage.setItem(UI_STORAGE_KEYS.QUICK_LINKS, JSON.stringify(uniqueLinks));
+            }
+            return uniqueLinks;
+        }
+        return quickLinksData;
+    };
+    
+    // 修复重复ID的辅助函数
+    const fixDuplicateIds = (links: QuickLink[]): QuickLink[] => {
+        const idSet = new Set<number>();
+        const result: QuickLink[] = [];
+        
+        for (const link of links) {
+            let newId = link.id;
+            // 如果ID已存在，则生成新的唯一ID
+            while (idSet.has(newId)) {
+                newId = Date.now(); // 使用时间戳确保唯一性
+            }
+            idSet.add(newId);
+            result.push({ ...link, id: newId });
+        }
+        
+        return result;
+    };
+
+    const [menuItems, setMenuItems] = useState<MenuItem[]>(getInitialMenuItems());
+    const [quickLinks, setQuickLinks] = useState<QuickLink[]>(getInitialQuickLinks());
     const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
     const [showQuickLinks, setShowQuickLinks] = useState(true); // 快捷链接显示设置，默认为true
-    const [showAddMenuModal, setShowAddMenuModal] = useState(false);
 
     useEffect(() => {
-        const savedBackground = localStorage.getItem("backgroundImage");
-
+        const savedBackground = localStorage.getItem(UI_STORAGE_KEYS.BACKGROUND_IMAGE);
         if (savedBackground) {
             setBackgroundImage(savedBackground);
         }
-
-        const savedMenuItems = localStorage.getItem("menuItems");
-
-        if (savedMenuItems) {
-            setMenuItems(JSON.parse(savedMenuItems));
+        // 加载快捷链接显示设置
+        const savedShowQuickLinks = localStorage.getItem(UI_STORAGE_KEYS.SHOW_QUICK_LINKS);
+        if (savedShowQuickLinks !== null) {
+            setShowQuickLinks(savedShowQuickLinks === "true");
         }
-
-         const savedQuickLinks = localStorage.getItem("quickLinks");
-
-         if (savedQuickLinks) {
-             setQuickLinks(JSON.parse(savedQuickLinks));
-         }
-         
-         // 加载快捷链接显示设置
-         const savedShowQuickLinks = localStorage.getItem("showQuickLinks");
-         if (savedShowQuickLinks !== null) {
-             setShowQuickLinks(savedShowQuickLinks === "true");
-         }
     }, []);
 
+    useEffect(()=>{
+         // 监听书签数据响应
+        const handleMessage = (request:any) => {
+            console.log('收到来自background的消息---:', request);
+            if (request.type === 'BOOKMARKS') {
+            console.log('收到书签树数据',request);
+            try {
+                // 简化书签处理逻辑，获取书签栏节点
+                const rootNode = request?.payload?.children as BookmarkCategory[];
+                setBookmarksData(rootNode)
+
+            } catch (error) {
+                console.error('处理书签数据时出错:', error);
+            }
+            }
+        };
+
+      // 注册消息监听器
+      /* eslint-disable no-undef */
+      chrome.runtime.onMessage.addListener(handleMessage);
+      chrome.runtime.sendMessage({ action: "GET_BOOKMARKS" },handleMessage)
+      
+       // 注册消息监听器
+       /* eslint-disable no-undef */
+    
+      
+      // 清理函数
+      return () => {
+        /* eslint-disable no-undef */
+        chrome.runtime.onMessage.removeListener(handleMessage);
+      };
+      
+    },[])
+
+
+
+
     useEffect(() => {
-        localStorage.setItem("menuItems", JSON.stringify(menuItems));
+        localStorage.setItem(UI_STORAGE_KEYS.MENU_ITEMS, JSON.stringify(menuItems));
     }, [menuItems]);
 
-     useEffect(() => {
-        localStorage.setItem("quickLinks", JSON.stringify(quickLinks));
+    useEffect(() => {
+        localStorage.setItem(UI_STORAGE_KEYS.QUICK_LINKS, JSON.stringify(quickLinks));
     }, [quickLinks]);
     
-    // 保存快捷链接显示设置到localStorage
+    // 保存快捷链接显示设置到localStorage（去重，保留一处）
     useEffect(() => {
-        localStorage.setItem("showQuickLinks", JSON.stringify(showQuickLinks));
-    }, [showQuickLinks]);
-    
-    // 保存快捷链接显示设置到localStorage
-    useEffect(() => {
-        localStorage.setItem("showQuickLinks", JSON.stringify(showQuickLinks));
+        localStorage.setItem(UI_STORAGE_KEYS.SHOW_QUICK_LINKS, JSON.stringify(showQuickLinks));
     }, [showQuickLinks]);
 
+    // 缓存当前激活的菜单项，初始化时从缓存恢复，缺省为 home
+    useEffect(() => {
+        localStorage.setItem(UI_STORAGE_KEYS.ACTIVE_MENU_ITEM, activeMenuItem);
+    }, [activeMenuItem]);
+
+    // 缓存侧边栏模式（always/hover）
+    useEffect(() => {
+        localStorage.setItem(UI_STORAGE_KEYS.SIDEBAR_MODE, sidebarMode);
+    }, [sidebarMode]);
+
+
+    const handeleMenuItems = (value: React.SetStateAction<MenuItem[]>) => {
+        // 根据传入值的类型处理
+        const newItems = typeof value === 'function' ? value(menuItems) : value;
+        setMenuItems(newItems);
+        localStorage.setItem(UI_STORAGE_KEYS.MENU_ITEMS, JSON.stringify(newItems));    
+    };
     const handleAddMenuItem = (newItem: MenuItem) => {
-        setMenuItems([...menuItems, newItem]);
-        setShowAddMenuModal(false);
+        handeleMenuItems([...menuItems, newItem]);
     };
 
     const toggleTodoPanel = () => {
@@ -131,12 +204,13 @@ export default function Home() {
             <div
                 className={`absolute inset-0 bg-gradient-to-br ${isDark ? "from-blue-900/70 to-orange-500/30" : "from-blue-300/30 to-orange-200/20"} mix-blend-multiply`}></div>
             <Sidebar
-                menuItems={menuItems}
-                setMenuItems={setMenuItems}
-                activeMenuItem={activeMenuItem}
-                setActiveMenuItem={setActiveMenuItem}
-                setShowSettingsPanel={setShowSettingsPanel}
-                sidebarMode={sidebarMode} />
+                    menuItems={menuItems}
+                    setMenuItems={setMenuItems}
+                    activeMenuItem={activeMenuItem}
+                    setActiveMenuItem={setActiveMenuItem}
+                    bookmark={bookmarksData}
+                    setShowSettingsPanel={setShowSettingsPanel}
+                    sidebarMode={sidebarMode} />
             <div
                 className={`relative z-10 flex-1 ${sidebarMode === "always" ? "ml-[60px]" : "ml-0"} p-4 sm:p-6 lg:p-8 flex flex-col items-center transition-all duration-300 h-screen overflow-hidden`}
                 onContextMenu={e => e.preventDefault()}>
@@ -179,8 +253,16 @@ export default function Home() {
                         </button>
                     </div>
                 </div>
-                <TodoPanel show={showTodoPanel} onClose={toggleTodoPanel} />
-                <CalendarModal show={showCalendarModal} onClose={toggleCalendarModal} />
+                <ErrorBoundary fallback={<PanelSkeleton />}>
+                  <Suspense fallback={<PanelSkeleton />}>
+                    <TodoPanel show={showTodoPanel} onClose={toggleTodoPanel} />
+                  </Suspense>
+                </ErrorBoundary>
+                <ErrorBoundary fallback={<ModalSkeleton />}>
+                  <Suspense fallback={<ModalSkeleton />}>
+                    <CalendarModal show={showCalendarModal} onClose={toggleCalendarModal} />
+                  </Suspense>
+                </ErrorBoundary>
                 <div className="w-full max-w-2xl my-6">
                     <form onSubmit={handleSearch} className="relative">
                         <div className="absolute z-[38] left-3 top-1/2 transform -translate-y-1/2">
@@ -232,35 +314,55 @@ export default function Home() {
                 </div>
                  {/* 根据设置决定是否显示快捷链接 */}
                  {showQuickLinks && (
-                     <QuickLinks
-                         quickLinks={quickLinks}
-                         onAddLink={(newLink: QuickLink) => {
-                             setQuickLinks([...quickLinks, newLink]);
-                         }}
-                         onUpdateLink={(updatedLink: QuickLink) => {
-                             setQuickLinks(quickLinks.map(link => link.id === updatedLink.id ? updatedLink : link));
-                         }}
-                         onDeleteLink={(linkId: number) => {
-                             setQuickLinks(quickLinks.filter(link => link.id !== linkId));
-                         }} />
+                   <ErrorBoundary fallback={<GridSkeleton />}>
+                     <Suspense fallback={<GridSkeleton />}>
+                        <QuickLinks
+                            quickLinks={quickLinks}
+                            onAddLink={(newLink: QuickLink) => {
+                                setQuickLinks([...quickLinks, newLink]);
+                            }}
+                            onUpdateLink={(updatedLink: QuickLink) => {
+                                setQuickLinks(quickLinks.map(link => link.id === updatedLink.id ? updatedLink : link));
+                            }}
+                            onDeleteLink={(linkId: number) => {
+                                setQuickLinks(quickLinks.filter(link => link.id !== linkId));
+                            }}
+                        />
+                     </Suspense>
+                   </ErrorBoundary>
                  )}
-                {activeMenuItem === "enterprise" && enterpriseLinks && enterpriseLinks.length > 0 ? <EnterpriseLinksGrid enterpriseLinks={enterpriseLinks} isDark={isDark} /> : <BookmarksGrid bookmarks={bookmarksData} activeCategory={activeMenuItem} />}
+                <ErrorBoundary fallback={<GridSkeleton />}>
+                  <Suspense fallback={<GridSkeleton />}>
+                    {activeMenuItem === "enterprise" && enterpriseLinks && enterpriseLinks.length > 0 
+                        ? <EnterpriseLinksGrid enterpriseLinks={enterpriseLinks} isDark={isDark} /> 
+                        : bookmarksData?.length>0 ? <BookmarksGrid bookmarks={bookmarksData} activeCategory={activeMenuItem} /> : null
+                        }
+                  </Suspense>
+                </ErrorBoundary>
             </div>
-            <SettingsPanel
-                show={showSettingsPanel}
-                onClose={() => setShowSettingsPanel(false)}
-                backgroundImage={backgroundImage}
-                setBackgroundImage={setBackgroundImage}
-                sidebarMode={sidebarMode}
-                setSidebarMode={setSidebarMode}
-                showQuickLinks={showQuickLinks}
-                toggleShowQuickLinks={toggleShowQuickLinks} />
-            <MenuModal
-                show={showMenuModal}
-                onClose={() => setShowMenuModal(false)}
-                onAdd={handleAddMenuItem}
-                onUpdate={() => {}}
-                mode="add" />
+            <ErrorBoundary fallback={<ModalSkeleton />}>
+              <Suspense fallback={<ModalSkeleton />}>
+                <SettingsPanel
+                    show={showSettingsPanel}
+                    onClose={() => setShowSettingsPanel(false)}
+                    backgroundImage={backgroundImage}
+                    setBackgroundImage={setBackgroundImage}
+                    sidebarMode={sidebarMode}
+                    setSidebarMode={setSidebarMode}
+                    showQuickLinks={showQuickLinks}
+                    toggleShowQuickLinks={toggleShowQuickLinks} />
+              </Suspense>
+            </ErrorBoundary>
+            <ErrorBoundary fallback={<ModalSkeleton />}>
+              <Suspense fallback={<ModalSkeleton />}>
+                <MenuModal
+                    show={showMenuModal}
+                    onClose={() => setShowMenuModal(false)}
+                    onAdd={handleAddMenuItem}
+                    onUpdate={() => {}}
+                    mode="add" />
+              </Suspense>
+            </ErrorBoundary>
         </div>
     );
 }

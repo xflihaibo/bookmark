@@ -1,9 +1,10 @@
-import { ThemeSettingsProps, AIBookmarksSettingsProps, EnterpriseLinksSettingsProps } from "@/types";
+import { ThemeSettingsProps, AIBookmarksSettingsProps, EnterpriseLinksSettingsProps, EnterpriseLink } from "@/types";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useTheme } from "@/hooks/useTheme";
 import { presetBackgrounds } from "@/enum/backgrounds";
-import { BOOKMARK_STORAGE_KEYS } from "@/enum/bookmarks";
+import { UI_STORAGE_KEYS } from "@/enum/ui";
+import { useEnterpriseLinks } from "@/hooks/useEnterpriseLinks";
 
 function ThemeSettings(
     {
@@ -16,7 +17,7 @@ function ThemeSettings(
         setBackground,
         resetBackground,
         handleBackgroundUpload,
-        handleManageQuickLinks,
+        
         showQuickLinks,
         toggleShowQuickLinks
     }: ThemeSettingsProps
@@ -39,9 +40,9 @@ function ThemeSettings(
                         className={`relative w-[96px] h-[42px] rounded-full transition-all duration-300 ease-in-out ${isDark ? "bg-blue-900" : "bg-gray-300"}`}
                         aria-label={isDark ? "切换到亮色模式" : "切换到暗色模式"}>
                          <div
-                             className={`w-[34px] h-[34px] rounded-full transition-all duration-300 ease-in-out ${isDark ? "bg-white translate-x-[calc(100%-2.1rem)] shadow-md shadow-blue-600/30" : "bg-white translate-x-1 shadow-md shadow-gray-400/30"}`}>
+                             className={`absolute top-1/2 -translate-y-1/2 w-[34px] h-[34px] rounded-full transition-all duration-300 ease-in-out flex items-center justify-center ${isDark ? "bg-white right-1 shadow-md shadow-blue-600/30" : "bg-white left-1 shadow-md shadow-gray-400/30"}`}>
                             <i
-                                className={`fas ${isDark ? "fa-sun" : "fa-moon"} text-center w-full h-full flex items-center justify-center text-sm ${isDark ? "text-yellow-500" : "text-gray-700"}`}></i>
+                                className={`fas ${isDark ? "fa-sun text-yellow-500" : "fa-moon text-gray-700"} block leading-[0] text-sm`}></i>
                         </div>
                     </button>
                 </div>
@@ -56,9 +57,9 @@ function ThemeSettings(
                         className={`relative w-[96px] h-[42px] rounded-full transition-all duration-300 ease-in-out ${showQuickLinks ? isDark ? "bg-blue-900" : "bg-green-500" : isDark ? "bg-gray-700" : "bg-gray-300"}`}
                         aria-label={showQuickLinks ? "隐藏快捷链接" : "显示快捷链接"}>
                         <div
-                            className={`w-[34px] h-[34px] rounded-full transition-all duration-300 ease-in-out ${showQuickLinks ? isDark ? "bg-white translate-x-[calc(100%-2.1rem)] shadow-md shadow-blue-600/30" : "bg-white translate-x-[calc(100%-2.1rem)] shadow-md shadow-green-500/30" : isDark ? "bg-white translate-x-1 shadow-md shadow-gray-600/30" : "bg-white translate-x-1 shadow-md shadow-gray-400/30"}`}>
+                            className={`absolute top-1/2 -translate-y-1/2 w-[34px] h-[34px] rounded-full transition-all duration-300 ease-in-out flex items-center justify-center ${showQuickLinks ? (isDark ? "bg-white right-1 shadow-md shadow-blue-600/30" : "bg-white right-1 shadow-md shadow-green-500/30") : (isDark ? "bg-white left-1 shadow-md shadow-gray-600/30" : "bg-white left-1 shadow-md shadow-gray-400/30")}`}>
                             <i
-                                className={`fas ${showQuickLinks ? "fa-check" : "fa-times"} text-center w-full h-full flex items-center justify-center text-sm ${showQuickLinks ? isDark ? "text-green-500" : "text-green-600" : isDark ? "text-red-400" : "text-red-500"}`}></i>
+                                className={`fas ${showQuickLinks ? "fa-check" : "fa-times"} leading-none align-middle text-sm ${showQuickLinks ? (isDark ? "text-green-500" : "text-green-600") : (isDark ? "text-red-400" : "text-red-500")}`}></i>
                         </div>
                     </button>
                 </div>
@@ -301,7 +302,7 @@ function EnterpriseLinksSettings(
                         onChange={e => {
                             const value = e.target.value;
                             setCdnUrl(value);
-                            localStorage.setItem(BOOKMARK_STORAGE_KEYS.ENTERPRISE_CDN_URL, value);
+                            localStorage.setItem(UI_STORAGE_KEYS.ENTERPRISE_CDN_URL, value);
                         }}
                         placeholder="企业CDN链接地址"
                         className={`flex-1 border rounded-lg px-4 py-2 placeholder-gray-400 focus:outline-none focus:ring-2 ${isDark ? "bg-gray-700 border-gray-600 text-white focus:ring-blue-500" : "bg-white border-gray-300 text-gray-800 focus:ring-blue-300"}`} />
@@ -427,6 +428,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = (
         isDark
     } = useTheme();
 
+    const { enterpriseLinks, setEnterpriseLinks } = useEnterpriseLinks();
+
     const [activeTab, setActiveTab] = useState<"theme" | "ai-bookmarks" | "enterprise">("theme");
     const [isAICategorizing, setIsAICategorizing] = useState(false);
     const [isChecking404, setIsChecking404] = useState(false);
@@ -436,16 +439,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = (
     const [isSyncing, setIsSyncing] = useState(false);
     const [syncStatus, setSyncStatus] = useState("");
 
-    const [enterpriseLinks, setEnterpriseLinks] = useState<{
-        name: string;
-        url: string;
-    }[]>([]);
-
     useEffect(() => {
         if (!show)
             return;
 
-        const savedCdnUrl = localStorage.getItem("enterpriseCdnUrl");
+        const savedCdnUrl = localStorage.getItem(UI_STORAGE_KEYS.ENTERPRISE_CDN_URL);
 
         if (savedCdnUrl) {
             setCdnUrl(savedCdnUrl);
@@ -457,19 +455,36 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = (
 
     const setBackground = (imageUrl: string) => {
         setBackgroundImage(imageUrl);
-        localStorage.setItem("backgroundImage", imageUrl);
-        toast("背景已更新");
+        try {
+            localStorage.setItem(UI_STORAGE_KEYS.BACKGROUND_IMAGE, imageUrl);
+            toast("背景已更新");
+        } catch (error) {
+            console.error("保存背景图片失败:", error);
+            toast.error("背景图片过大，无法保存到本地存储");
+            // 重置为默认背景
+            setBackgroundImage(
+                "https://space.coze.cn/api/coze_space/gen_image?image_size=landscape_16_9&prompt=Anime%20style%20landscape%20with%20mountains%20and%20clouds%20beautiful%20sky%20scenery&sign=f0bc0f190fb6a448d4c43003639d50ed"
+            );
+        }
     };
 
     const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
 
         if (file) {
-            const reader = new FileReader();
+            // 限制图片大小为5MB
+            const MAX_SIZE = 3 * 1024 * 1024;
+            if (file.size > MAX_SIZE) {
+                toast.error("图片大小不能超过3MB，请选择较小的图片");
+                return;
+            }
 
+            const reader = new FileReader();
             reader.onload = event => {
                 if (event.target?.result) {
-                    setBackground(event.target.result as string);
+                    const imageUrl = event.target.result as string;
+                    console.log("Image URL:", imageUrl);
+                    setBackground(imageUrl);
                 }
             };
 
@@ -582,14 +597,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = (
                 }
 
                 setSyncStatus(errorMessage);
-                toast(errorMessage);
+                toast.error(errorMessage);
                 throw new Error(errorMessage);
             }
 
             setSyncStatus("正在解析数据...");
             return response.json();
         }).then(data => {
-            let enterpriseLinks = [];
+            let links: EnterpriseLink[] = [];
             let companyImage = "";
             let dataStructureInfo = "";
 
@@ -597,10 +612,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = (
                 dataStructureInfo = "companyArr格式";
                 companyImage = data.companyImg || "";
 
-                data.companyArr.forEach(category => {
+                data.companyArr.forEach((category: { title: string; children?: any[] }) => {
                     if (category.children && Array.isArray(category.children)) {
-                        category.children.forEach(item => {
-                            enterpriseLinks.push({
+                        category.children.forEach((item: { title?: string; url?: string }) => {
+                            links.push({
                                 name: item.title || "未命名链接",
                                 url: item.url || "",
                                 icon: "fa-link",
@@ -611,29 +626,29 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = (
                     }
                 });
 
-                enterpriseLinks = enterpriseLinks.filter(item => item.url);
+                links = links.filter((item: EnterpriseLink) => item.url);
             } else if (Array.isArray(data)) {
                 dataStructureInfo = "数组格式";
 
-                enterpriseLinks = data.map(item => ({
+                links = data.map((item: { name?: string; title?: string; url?: string; link?: string; icon?: string; description?: string }) => ({
                     name: item.name || item.title || "未命名链接",
                     url: item.url || item.link || "",
                     icon: item.icon || "",
                     description: item.description || ""
-                })).filter(item => item.url);
+                })).filter((item: EnterpriseLink) => item.url);
             } else if (data.links && Array.isArray(data.links)) {
                 dataStructureInfo = "links字段格式";
 
-                enterpriseLinks = data.links.map(item => ({
+                links = data.links.map((item: { name?: string; title?: string; url?: string; link?: string; icon?: string; description?: string }) => ({
                     name: item.name || item.title || "未命名链接",
                     url: item.url || item.link || "",
                     icon: item.icon || "",
                     description: item.description || ""
-                })).filter(item => item.url);
+                })).filter((item: EnterpriseLink) => item.url);
             } else {
                 dataStructureInfo = "使用模拟数据";
 
-                enterpriseLinks = [{
+                links = [{
                     name: "企业门户",
                     url: "https://portal.company.com",
                     icon: "fa-building",
@@ -659,26 +674,23 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = (
             }
 
             if (companyImage) {
-                localStorage.setItem("companyImage", companyImage);
+                localStorage.setItem(UI_STORAGE_KEYS.COMPANY_IMAGE, companyImage);
             }
 
-            setEnterpriseLinks(enterpriseLinks);
-            localStorage.setItem("enterpriseLinks", JSON.stringify(enterpriseLinks));
-            localStorage.setItem("hasEnterpriseLinks", "true");
-            window.dispatchEvent(new Event("enterpriseLinksChanged"));
+            // 使用 Context 统一持久化与事件兼容
+            setEnterpriseLinks(links);
             setIsSyncing(false);
 
             if (syncStatus === "正在解析数据...") {
                 const statusMessage = `企业链接同步成功！(数据格式: ${dataStructureInfo})`;
                 setSyncStatus(statusMessage);
-                toast(`企业链接同步成功，已添加 ${enterpriseLinks.length} 个链接，工作图标已添加到侧边栏`);
+                toast(`企业链接同步成功，已添加 ${links.length} 个链接，工作图标已添加到侧边栏`);
 
                 setTimeout(() => {
                     onClose();
                 }, 1000);
             } else {
                 toast("已加载企业链接数据（使用演示模式）");
-                window.dispatchEvent(new Event("enterpriseLinksChanged"));
 
                 setTimeout(() => {
                     onClose();
@@ -687,18 +699,18 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = (
         }).catch(error => {
             clearTimeout(timeoutId);
 
-            if (error.name === "AbortError") {
+            if ((error as any).name === "AbortError") {
                 return;
             }
 
             let errorMessage = "同步失败: ";
 
-            if (error.message.includes("Failed to fetch")) {
+            if ((error as Error).message.includes("Failed to fetch")) {
                 errorMessage += "无法连接到服务器，请检查网络连接或链接地址";
-            } else if (error.message.includes("Unexpected token")) {
+            } else if ((error as Error).message.includes("Unexpected token")) {
                 errorMessage += "数据格式错误，返回的不是有效的JSON格式";
             } else {
-                errorMessage += error.message;
+                errorMessage += (error as Error).message;
             }
 
             console.error("同步企业链接失败:", error);
@@ -729,15 +741,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = (
                     description: "团队沟通平台"
                 }];
 
+                // 直接使用 Context 更新
                 setEnterpriseLinks(mockEnterpriseLinks);
-                localStorage.setItem("enterpriseLinks", JSON.stringify(mockEnterpriseLinks));
-                localStorage.setItem("hasEnterpriseLinks", "true");
 
                 if (syncStatus === errorMessage) {
                     setSyncStatus("已加载演示数据 - 无法连接到真实数据源或数据格式不符合要求");
                 }
-
-                setEnterpriseLinks(mockEnterpriseLinks);
             }, 1000);
         });
     };

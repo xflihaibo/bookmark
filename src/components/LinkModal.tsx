@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useTheme } from "@/hooks/useTheme";
 import { QuickLink } from "@/types";
-
+import { QUICK_LINK_COLORS} from "@/enum/quickLinks";
 interface LinkModalProps {
   show: boolean;
   mode: "add" | "edit";
@@ -56,8 +56,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
     const newLink: QuickLink = {
       id: mode === "edit" && link ? link.id : Date.now(),
       name: linkName.trim(),
-      icon: linkIcon,
-      color: mode === "edit" && link ? link.color : "bg-blue-500",
+      color: mode === "edit" && link ? link.color : QUICK_LINK_COLORS[Math.floor(Math.random() * QUICK_LINK_COLORS.length)],
       url: linkUrl.trim()
     };
     

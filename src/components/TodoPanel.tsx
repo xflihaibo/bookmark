@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TodoItem, TodoPanelProps } from '@/types';
 import { useTheme } from '@/hooks/useTheme';
 import { BOOKMARK_STORAGE_KEYS } from '@/enum/bookmarks';
+import { storage } from '@/utils/storage';
 
 export const TodoPanel: React.FC<TodoPanelProps> = ({ show, onClose }) => {
   const { isDark } = useTheme();
@@ -10,16 +11,14 @@ export const TodoPanel: React.FC<TodoPanelProps> = ({ show, onClose }) => {
 
   useEffect(() => {
     if (show) {
-      const savedTodos = localStorage.getItem(BOOKMARK_STORAGE_KEYS.TASK_ITEMS);
-      if (savedTodos) {
-        setTodos(JSON.parse(savedTodos));
-      }
+      const saved = storage.getItem<TodoItem[]>(BOOKMARK_STORAGE_KEYS.TASK_ITEMS, []);
+      setTodos(saved);
     }
   }, [show]);
 
   useEffect(() => {
     if (show) {
-      localStorage.setItem(BOOKMARK_STORAGE_KEYS.TASK_ITEMS, JSON.stringify(todos));
+      storage.setItem(BOOKMARK_STORAGE_KEYS.TASK_ITEMS, todos);
     }
   }, [todos, show]);
 

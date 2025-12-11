@@ -14,10 +14,18 @@ export interface TodoItem {
 }
 
 export interface BookmarkCategory {
-  category?: string;  // 可选，因为实际数据可能使用title
-  links?: string[];   // 可选，因为实际数据可能使用children
+  category?: string;  // 改回可选，因为实际数据可能使用title
   title?: string;     // 兼容实际数据中的title字段
-  children?: string[]; // 兼容实际数据中的children字段
+  links?: any[];      // 使用any[]更灵活地处理实际数据
+  children?: BookmarkCategory[];
+  // 支持书签项的实际属性
+  dateAdded?: number;
+  dateLastUsed?: number;
+  id?: string;
+  index?: number;
+  parentId?: string;
+  syncing?: boolean;
+  url?: string;
 }
 
 // 添加缺失的BookmarkItem接口
@@ -30,7 +38,7 @@ export interface BookmarkItem {
 export interface QuickLink {
   id: number;
   name: string;
-  icon: string;
+  icon?: string;
   color: string;
   url?: string;
 }
@@ -38,6 +46,9 @@ export interface QuickLink {
 export interface EnterpriseLink {
   name: string;
   url: string;
+  icon?: string;
+  description?: string;
+  category?: string;
 }
 
 export interface BookmarkVisibilitySettings {
@@ -49,11 +60,12 @@ export interface BookmarkManagementModalProps {
   show: boolean;
   onClose: () => void;
   activeTab: string;
+  bookmarks: NestedBookmarkCategory[];
 }
 
-export interface NestedBookmarkCategory extends BookmarkCategory {
-  children?: NestedBookmarkCategory[];
-}
+// 简化类型定义，BookmarkCategory已经支持嵌套结构，无需额外的NestedBookmarkCategory接口
+// 保留NestedBookmarkCategory接口作为别名，以保持向后兼容
+export type NestedBookmarkCategory = BookmarkCategory;
 
 export interface MenuModalProps {
   show: boolean;
@@ -160,6 +172,7 @@ export interface UnlockModalProps {
 
 export interface SidebarProps {
   menuItems: MenuItem[];
+  bookmark:BookmarkCategory[];
   setMenuItems: React.Dispatch<React.SetStateAction<MenuItem[]>>;
   activeMenuItem: string;
   setActiveMenuItem: React.Dispatch<React.SetStateAction<string>>;
@@ -168,7 +181,7 @@ export interface SidebarProps {
 }
 
 export interface EnterpriseLinksGridProps {
-  enterpriseLinks: any[];
+  enterpriseLinks: EnterpriseLink[];
   isDark: boolean;
 }
 
@@ -202,8 +215,8 @@ export interface BookmarkContextType {
 }
 
 export interface EnterpriseLinkContextType {
-  enterpriseLinks: any[];
-  setEnterpriseLinks: React.Dispatch<React.SetStateAction<any[]>>;
+  enterpriseLinks: EnterpriseLink[];
+  setEnterpriseLinks: React.Dispatch<React.SetStateAction<EnterpriseLink[]>>;
   enterpriseLinkLocked: boolean;
   setEnterpriseLinkLocked: React.Dispatch<React.SetStateAction<boolean>>;
   enterpriseLinkPassword: string;

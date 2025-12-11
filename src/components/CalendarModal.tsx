@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useTheme } from "@/hooks/useTheme";
 import { CalendarEvent, CalendarModalProps } from "@/types";
 import { BOOKMARK_STORAGE_KEYS } from "@/enum/bookmarks";
+import { storage } from "@/utils/storage";
 
 export const CalendarModal: React.FC<CalendarModalProps> = (
     {
@@ -22,23 +23,15 @@ export const CalendarModal: React.FC<CalendarModalProps> = (
 
     useEffect(() => {
         if (show) {
-            const savedEvents = localStorage.getItem(BOOKMARK_STORAGE_KEYS.CALENDAR_EVENTS);
-
-            if (savedEvents) {
-                try {
-                    setEvents(JSON.parse(savedEvents));
-                } catch (error) {
-                    console.error("Failed to load calendar events:", error);
-                }
-            }
-
+            const savedEvents = storage.getItem<CalendarEvent[]>(BOOKMARK_STORAGE_KEYS.CALENDAR_EVENTS, []);
+            setEvents(savedEvents);
             setSelectedDate(new Date());
         }
     }, [show]);
 
     useEffect(() => {
         if (show) {
-            localStorage.setItem(BOOKMARK_STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(events));
+            storage.setItem(BOOKMARK_STORAGE_KEYS.CALENDAR_EVENTS, events);
         }
     }, [events, show]);
 
@@ -46,7 +39,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = (
     const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
     const firstDayIndex = firstDay.getDay();
     const daysInMonth = lastDay.getDate();
-    const daysArray = [];
+    const daysArray: { date: Date; currentMonth: boolean }[] = [];
 
     for (let i = firstDayIndex - 1; i >= 0; i--) {
         const prevDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), -i);
@@ -99,11 +92,12 @@ export const CalendarModal: React.FC<CalendarModalProps> = (
                 description: newEventDescription.trim()
             };
 
-            setEvents([...events, newEvent]);
+            const updated = [...events, newEvent];
+            setEvents(updated);
             setNewEventTitle("");
             setNewEventDescription("");
             setShowAddEventModal(false);
-            localStorage.setItem(BOOKMARK_STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify([...events, newEvent]));
+            storage.setItem(BOOKMARK_STORAGE_KEYS.CALENDAR_EVENTS, updated);
             window.dispatchEvent(new Event("calendarEventsChanged"));
         }
     };
@@ -111,7 +105,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = (
     const handleDeleteEvent = (eventId: string) => {
         const updatedEvents = events.filter(event => event.id !== eventId);
         setEvents(updatedEvents);
-            localStorage.setItem(BOOKMARK_STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(updatedEvents));
+        storage.setItem(BOOKMARK_STORAGE_KEYS.CALENDAR_EVENTS, updatedEvents);
             window.dispatchEvent(new Event("calendarEventsChanged"));
     };
 

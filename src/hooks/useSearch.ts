@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
+
 import { searchEngines, DEFAULT_SEARCH_ENGINE, SEARCH_STORAGE_KEY } from '@/enum/searchEngines';
 
 export function useSearch() {

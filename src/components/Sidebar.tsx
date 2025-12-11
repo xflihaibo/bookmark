@@ -1,27 +1,29 @@
+import React, { useState, useEffect, useRef } from "react";
 // 导入独立的模态框组件
 import { LockModal } from './LockModal';
 import { UnlockModal } from './UnlockModal';
-
-
-import { useState, useEffect, useRef } from "react";
-import { MenuItem, SidebarProps } from "@/types";
+import { MenuItem, SidebarProps, NestedBookmarkCategory } from "@/types";
 import { toast } from "sonner";
 import { useTheme } from "@/hooks/useTheme";
 import { BookmarkManagementModal } from "./BookmarkManagementModal";
 import { MenuModal } from "./MenuModal";
 import { useEnterpriseLinks } from "@/hooks/useEnterpriseLinks";
-import { availableIcons } from '@/enum/menuItems';
+// import { bookmarksData } from '../enum/bookmarks';
 
-export const Sidebar: React.FC<SidebarProps> = (
+const SidebarInner: React.FC<SidebarProps> = (
     {
         menuItems,
         setMenuItems,
         activeMenuItem,
         setActiveMenuItem,
         setShowSettingsPanel,
-        sidebarMode
+        sidebarMode,
+        bookmark
     }
 ) => {
+    // 开发日志，建议在生产关闭
+    // console.log("menuItems", menuItems, activeMenuItem)
+
     const { isDark } = useTheme();
     const { enterpriseLinks, enterpriseLinkLocked, enterpriseLinkPassword, setEnterpriseLinkLocked, setEnterpriseLinkPassword, handleDeleteEnterpriseLinks } = useEnterpriseLinks();
     
@@ -39,8 +41,6 @@ export const Sidebar: React.FC<SidebarProps> = (
     const [passwordInput, setPasswordInput] = useState("");
     const [confirmPasswordInput, setConfirmPasswordInput] = useState("");
 
-    // 从枚举中导入可用图标
-
     // 处理鼠标悬停显示/隐藏侧边栏
     useEffect(() => {
         const sidebarElement = sidebarRef.current;
@@ -49,14 +49,19 @@ export const Sidebar: React.FC<SidebarProps> = (
         const handleMouseEnter = () => setIsHovered(true);
         const handleMouseLeave = () => setIsHovered(false);
 
-        sidebarElement.addEventListener("mouseenter", handleMouseEnter);
-        sidebarElement.addEventListener("mouseleave", handleMouseLeave);
+        if (sidebarMode === "hover") {
+            sidebarElement.addEventListener("mouseenter", handleMouseEnter);
+            sidebarElement.addEventListener("mouseleave", handleMouseLeave);
+        } else {
+            // 非 hover 模式下，确保悬停状态为 false，避免无意义渲染
+            setIsHovered(false);
+        }
         
         return () => {
             sidebarElement.removeEventListener("mouseenter", handleMouseEnter);
             sidebarElement.removeEventListener("mouseleave", handleMouseLeave);
         };
-    }, []);
+    }, [sidebarMode]);
 
     // 点击外部关闭右键菜单
     useEffect(() => {
@@ -88,7 +93,9 @@ export const Sidebar: React.FC<SidebarProps> = (
                 setSelectedMenuItem(menuItem);
                 setShowUnlockModal(true);
             } else {
-                setActiveMenuItem(id);
+                if (id !== activeMenuItem) {
+                    setActiveMenuItem(id);
+                }
             }
         }
     };
@@ -123,8 +130,8 @@ export const Sidebar: React.FC<SidebarProps> = (
         const rect = e.currentTarget.getBoundingClientRect();
 
         setContextMenuPosition({
-            x: rect.left + rect.width / 2+20,
-            y: rect.top + rect.height / 2+20
+            x: rect.left + rect.width / 2 + 20,
+            y: rect.top + rect.height / 2 + 20
         });
 
         setSelectedMenuItem(item);
@@ -189,8 +196,6 @@ export const Sidebar: React.FC<SidebarProps> = (
                 // 处理企业链接的锁定
                 setEnterpriseLinkLocked(true);
                 setEnterpriseLinkPassword(passwordInput);
-                localStorage.setItem('enterpriseLinkLocked', 'true');
-                localStorage.setItem('enterpriseLinkPassword', passwordInput);
                 toast(`已锁定企业链接`);
             } else {
                 // 处理普通菜单项的锁定
@@ -213,22 +218,17 @@ export const Sidebar: React.FC<SidebarProps> = (
         if (!selectedMenuItem) return;
         
         if (selectedMenuItem.id === "enterprise") {
-            // 处理企业链接的解锁
             if (passwordInput === enterpriseLinkPassword) {
                 setEnterpriseLinkLocked(false);
                 setEnterpriseLinkPassword("");
-                localStorage.removeItem('enterpriseLinkLocked');
-                localStorage.removeItem('enterpriseLinkPassword');
                 toast(`已解锁企业链接`);
                 setShowUnlockModal(false);
                 setPasswordInput("");
-                // 如果当前是想访问企业链接，则直接激活
                 setActiveMenuItem("enterprise");
             } else {
                 toast("密码错误，请重新输入");
             }
         } else {
-            // 处理普通菜单项的解锁
             const menuItem = menuItems.find(item => item.id === selectedMenuItem.id);
             if (menuItem && menuItem.password === passwordInput) {
                 const updatedMenuItems = menuItems.map(item => 
@@ -267,7 +267,7 @@ export const Sidebar: React.FC<SidebarProps> = (
         <>
             <div
                 ref={sidebarRef}
-                className={`fixedleft-0 top-0 bottom-0 w-[60px] md:w-[60px] z-30 flex flex-col items-center py-6 gap-8 transition-all duration-300 ${shouldShowSidebar ? "translate-x-0" : "-translate-x-full"}`}>
+                className={`fixed left-0 top-0 bottom-0 w-[60px] md:w-[60px] z-30 flex flex-col items-center py-6 gap-8 transition-all duration-300 ${shouldShowSidebar ? "translate-x-0" : "-translate-x-full"}`}>
                 <div
                     className={`absolute inset-0 backdrop-blur-lg ${isDark ? "bg-black/20" : "bg-white/10"}`}></div>
                  
@@ -275,7 +275,11 @@ export const Sidebar: React.FC<SidebarProps> = (
                     {menuItems.map(item => (
                         <button
                             key={item.id}
-                            onClick={e => handleMenuItemClick(item.id, e)}
+                            onClick={e => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleMenuItemClick(item.id, e);
+                            }}
                             onContextMenu={e => handleContextMenu(item, e)}
                             className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 relative
                                 ${activeMenuItem === item.id 
@@ -290,7 +294,11 @@ export const Sidebar: React.FC<SidebarProps> = (
                     {/* 企业链接图标 - 当有企业链接时显示 */}
                     {enterpriseLinks.length > 0 && (
                         <button
-                            onClick={(e) => handleMenuItemClick("enterprise", e)}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleMenuItemClick("enterprise", e);
+                            }}
                             onContextMenu={(e) => handleEnterpriseLinkContextMenu(e)}
                             className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 relative
                                 ${activeMenuItem === "enterprise"
@@ -437,6 +445,7 @@ export const Sidebar: React.FC<SidebarProps> = (
             {showBookmarkManagement && (
                 <BookmarkManagementModal
                     show={showBookmarkManagement}
+                    bookmarks={bookmark as NestedBookmarkCategory[]}
                     onClose={() => setShowBookmarkManagement(false)}
                     activeTab={selectedMenuItem?.id || 'home'}
                 />
@@ -456,3 +465,5 @@ export const Sidebar: React.FC<SidebarProps> = (
         </>
     );
 };
+
+export const Sidebar = React.memo(SidebarInner);

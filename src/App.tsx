@@ -1,9 +1,7 @@
-import { Routes, Route } from "react-router-dom";
 import Home from "@/pages/Home";
 import { useState } from "react";
 import { AuthContext } from '@/contexts/authContext';
 import { ThemeProvider } from '@/contexts/themeContext';
-import { BookmarkProvider } from '@/contexts/bookmarkContext';
 import { EnterpriseLinkProvider } from '@/contexts/enterpriseLinkContext';
 
 export default function App() {
@@ -19,14 +17,9 @@ export default function App() {
       value={{ isAuthenticated, setIsAuthenticated, logout }}
     >
       <ThemeProvider>
-        <BookmarkProvider>
           <EnterpriseLinkProvider>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/other" element={<div className="text-center text-xl">Other Page - Coming Soon</div>} />
-            </Routes>
+            <Home />
           </EnterpriseLinkProvider>
-        </BookmarkProvider>
       </ThemeProvider>
     </AuthContext.Provider>
   );
