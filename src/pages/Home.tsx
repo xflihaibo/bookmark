@@ -109,9 +109,9 @@ export default function Home() {
     useEffect(()=>{
          // 监听书签数据响应
         const handleMessage = (request:any) => {
-            console.log('收到来自background的消息---:', request);
+            // console.log('收到来自background的消息---:', request);
             if (request.type === 'BOOKMARKS') {
-            console.log('收到书签树数据',request);
+            // console.log('收到书签树数据',request);
             try {
                 // 简化书签处理逻辑，获取书签栏节点
                 const rootNode = request?.payload?.children as BookmarkCategory[];

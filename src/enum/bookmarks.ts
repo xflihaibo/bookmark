@@ -222,7 +222,7 @@
 //   },
 // ];
 
-// // 书签分类常量
+// 书签分类常量
 // export const BookmarkCategories = {
 //   AI_TOOLS: "AI工具",
 //   DEVELOPMENT: "开发资源",
@@ -230,14 +230,14 @@
 //   LEARNING_MATERIALS: "学习资料"
 // } as const;
 
-// // 书签相关存储键名
-// export const BOOKMARK_STORAGE_KEYS = {
-//   HIDDEN_CATEGORIES: "hiddenBookmarkCategories",
-//   TASK_ITEMS: "bookmarkTodos",
-//   CALENDAR_EVENTS: "calendarEvents",
-//   ENTERPRISE_LINKS: "enterpriseLinks",
-//   ENTERPRISE_LINK_LOCKED: "enterpriseLinkLocked",
-//   ENTERPRISE_LINK_PASSWORD: "enterpriseLinkPassword",
-//   HAS_ENTERPRISE_LINKS: "hasEnterpriseLinks",
-//   ENTERPRISE_CDN_URL: "enterpriseCdnUrl"
-// } as const;
+// 书签相关存储键名
+export const BOOKMARK_STORAGE_KEYS = {
+  HIDDEN_CATEGORIES: "hiddenBookmarkCategories",
+  TASK_ITEMS: "bookmarkTodos",
+  CALENDAR_EVENTS: "calendarEvents",
+  ENTERPRISE_LINKS: "enterpriseLinks",
+  ENTERPRISE_LINK_LOCKED: "enterpriseLinkLocked",
+  ENTERPRISE_LINK_PASSWORD: "enterpriseLinkPassword",
+  HAS_ENTERPRISE_LINKS: "hasEnterpriseLinks",
+  ENTERPRISE_CDN_URL: "enterpriseCdnUrl"
+} as const;

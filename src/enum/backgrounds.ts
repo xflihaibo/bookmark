@@ -1,19 +1,30 @@
-// 背景图片相关常量
-export const defaultBackgroundImage = 'https://space.coze.cn/api/coze_space/gen_image?image_size=landscape_16_9&prompt=Anime%20style%20landscape%20with%20mountains%20and%20clouds%20beautiful%20sky%20scenery&sign=f0bc0f190fb6a448d4c43003639d50ed';
+// 本地背景图片（直接引用 src/assest/backgroundImg 下的资源）
+// 注意：项目中路径目录为 "assest"（非 assets）。如需改名，请同步更新此处导入路径。
 
-// 预设背景图片列表
-export const presetBackgrounds = [
-  "https://space.coze.cn/api/coze_space/gen_image?image_size=landscape_16_9&prompt=Abstract%20art%20colorful%20gradient%20fluid%20painting%20modern%20minimalist&sign=f270081e3bd362bfc209a0ef028dedf9",
-  "https://space.coze.cn/api/coze_space/gen_image?image_size=landscape_16_9&prompt=Cyberpunk%20city%20neon%20lights%20future%20night%20rainy%20atmosphere&sign=292e0d159196341e2d00b82fc1e8266b",
-  "https://space.coze.cn/api/coze_space/gen_image?image_size=landscape_16_9&prompt=Minimalist%20nature%20mountains%20fog%20soft%20pastel%20colors%20simple%20composition&sign=a09e9bc22a4f408c2d47b92a1b1f41c1",
-  "https://space.coze.cn/api/coze_space/gen_image?image_size=landscape_16_9&prompt=Space%20galaxy%20stars%20nebula%20deep%20universe%20cosmic%20background&sign=5e95c5c7ed27b8c38414aaaf9ea536dd",
-  "https://space.coze.cn/api/coze_space/gen_image?image_size=landscape_16_9&prompt=Ocean%20underwater%20coral%20reef%20tropical%20fish%20clear%20water%20sunlight&sign=371563cd3963a40960f9cde96c0c2666",
-  "https://space.coze.cn/api/coze_space/gen_image?image_size=landscape_16_9&prompt=Vintage%20retro%20city%20street%2070s%20aesthetic%20warm%20colors%20sunset&sign=e93f0ab8a59da6f230aeea46a64c49cf",
-  "https://space.coze.cn/api/coze_space/gen_image?image_size=landscape_16_9&prompt=Japanese%20garden%20zen%20stones%20water%20bamboo%20peaceful%20serene&sign=f5379adc506da1c02a10c4a4f5f9d8a5",
-  "https://space.coze.cn/api/coze_space/gen_image?image_size=landscape_16_9&prompt=Autumn%20forest%20colorful%20leaves%20sunlight%20warm%20vibes%20scenic&sign=6aa003d8628fb3a8463f76a6d71dcf11",
-  "https://space.coze.cn/api/coze_space/gen_image?image_size=landscape_16_9&prompt=Geometric%20pattern%20abstract%20shapes%20bold%20colors%20modern%20art&sign=bfe46ecc88d2ae07422a02f9f5720dee",
-  "https://space.coze.cn/api/coze_space/gen_image?image_size=landscape_16_9&prompt=Dreamy%20clouds%20pastel%20sky%20soft%20light%20ethereal%20atmosphere%20surreal&sign=b939bf690f042aa6d0498b2ff9891b1c"
+import bg01 from '@/assest/backgroundImg/background-01.png';
+import bg02 from '@/assest/backgroundImg/background-02.png';
+import bg03 from '@/assest/backgroundImg/background-03.png';
+import bg04 from '@/assest/backgroundImg/background-04.png';
+import bg05 from '@/assest/backgroundImg/background-05.png';
+import bg06 from '@/assest/backgroundImg/background-06.png';
+import bg07 from '@/assest/backgroundImg/background-07.png';
+import bg08 from '@/assest/backgroundImg/background-08.png';
+import bg09 from '@/assest/backgroundImg/background-09.png';
+import bg10 from '@/assest/backgroundImg/background-10.png';
+
+// 预设背景图片列表（可按需调整顺序）
+export const presetBackgrounds: string[] = [
+  bg01,
+  bg02,
+  bg03,
+  bg04,
+  bg05,
+  bg06,
+  bg07,
+  bg08,
+  bg09,
+  bg10,
 ];
 
-// 背景存储键名
-export const BACKGROUND_STORAGE_KEY = 'backgroundImage';
+// 默认背景（取第一张或指定）
+export const defaultBackgroundImage: string = presetBackgrounds[0] || '';

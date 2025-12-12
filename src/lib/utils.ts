@@ -9,7 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 
 
 export const  transformNestedData=(nestedData: BookmarkCategory[], hideCategory: string[]) =>{
-  console.log('hideCategory___:',nestedData,hideCategory)
+  // console.log('hideCategory___:',nestedData,hideCategory)
   const result: BookmarkCategory[] = [];
   
 const bookmarkCategory:BookmarkCategory ={

@@ -457,7 +457,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = (
         setBackgroundImage(imageUrl);
         try {
             localStorage.setItem(UI_STORAGE_KEYS.BACKGROUND_IMAGE, imageUrl);
-            toast("背景已更新");
+            // toast("背景已更新");
         } catch (error) {
             console.error("保存背景图片失败:", error);
             toast.error("背景图片过大，无法保存到本地存储");
@@ -483,7 +483,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = (
             reader.onload = event => {
                 if (event.target?.result) {
                     const imageUrl = event.target.result as string;
-                    console.log("Image URL:", imageUrl);
+                    // console.log("Image URL:", imageUrl);
                     setBackground(imageUrl);
                 }
             };

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "千面书签",
+  "name": "千面书签｜智能个人导航与企业链接工作台",
   "version": "1.0.0",
-  "description": "千面书签的定位是市场上第一个真正将 AI 驱动的个人效率与 企业级实时协作 完美结合的新标签页插件",
+  "description": "一键定制你的新标签页：书签树形管理、快捷链接、企业链接工作台、主题切换、待办与日历提醒，数据本地存储，开箱即用，立即提升效率。",
   "icons": {
     "16": "logo.png",
     "32": "logo.png",
@@ -24,7 +24,7 @@
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": ["bookmarks", "storage", "tabs"],
+  "permissions": ["bookmarks", "storage"],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline';"
   },

@@ -9,8 +9,6 @@ export const BookmarksGrid: React.FC<BookmarksGridProps> = ({
     bookmarks,
     activeCategory
 }) => {
-    console.log(bookmarks,activeCategory)
-
     const { isDark } = useTheme();
     // todo 添加当前tab 需要过滤的Id[]信息
     // let bookmarkBarCategory=transformNestedData(bookmarks,[])
@@ -38,7 +36,7 @@ export const BookmarksGrid: React.FC<BookmarksGridProps> = ({
     // 加载本地存储的隐藏设置
     useEffect(() => {
         const savedHiddenCategories = localStorage.getItem(UI_STORAGE_KEYS.HIDDEN_BOOKMARK_CATEGORIES);
-        console.log('activeCategory', savedHiddenCategories)
+        // console.log('activeCategory', savedHiddenCategories)
         if (savedHiddenCategories) {
             try {
                 let hiddenCategoriesStage=JSON.parse(savedHiddenCategories)
@@ -57,7 +55,7 @@ export const BookmarksGrid: React.FC<BookmarksGridProps> = ({
     // 保存隐藏设置到本地存储
     useEffect(() => {
         if (JSON.stringify(hiddenCategories) !== "{}") {
-            console.log('hiddenCategories:',hiddenCategories)
+            // console.log('hiddenCategories:',hiddenCategories)
             localStorage.setItem(UI_STORAGE_KEYS.HIDDEN_BOOKMARK_CATEGORIES, JSON.stringify(hiddenCategories));
         }
         // console.log('hiddenCategories:',hiddenCategories)

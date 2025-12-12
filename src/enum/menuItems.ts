@@ -1,14 +1,14 @@
 // 菜单栏相关常量
 export const initialMenuItems = [
   { id: 'home', icon: 'fa-house', label: '首页' },
-  { id: 'ai', icon: 'fa-brain', label: '人工智能' },
-  { id: 'work', icon: 'fa-briefcase', label: '工作' },
+  { id: 'ai', icon: 'fa-robot', label: 'AI' },
+  { id: 'work', icon: 'fa-computer', label: '工作' },
   { id: 'learning', icon: 'fa-graduation-cap', label: '学习' },
   { id: 'entertainment', icon: 'fa-gamepad', label: '娱乐' }
 ];
 
 export const availableIcons = [
-  "fa-robot",
+        "fa-robot",
         "fa-brain",
         "fa-microchip",
         "fa-atom",
