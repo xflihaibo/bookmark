@@ -386,16 +386,20 @@ const SidebarInner: React.FC<SidebarProps> = (
                             )}
                             
                             {selectedMenuItem.id === "enterprise" ? (
-                                activeMenuItem !== "enterprise" && (
                                     <button
                                         onClick={() => {
+                                            // 防御：如果当前正在查看企业链接页面，则不允许删除
+                                            if (activeMenuItem === "enterprise") {
+                                                toast("当前正在查看企业链接，无法删除");
+                                                setContextMenuVisible(false);
+                                                return;
+                                            }
                                             handleDeleteEnterpriseLinks();
                                             setContextMenuVisible(false);
                                         }}
                                         className={`w-full text-left px-4 py-2 text-sm transition-colors ${isDark ? "text-gray-300 hover:bg-red-900/30 hover:text-red-400" : "text-gray-700 hover:bg-red-50 hover:text-red-600"} flex items-center gap-2`}>
                                         <i className="fas fa-trash-alt text-red-500"></i>删除
                                     </button>
-                                )
                             ) : (
                                 <button
                                     onClick={handleDeleteMenuItem}

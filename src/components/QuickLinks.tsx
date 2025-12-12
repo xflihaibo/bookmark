@@ -7,6 +7,15 @@ import { toast } from "sonner";
 // 从枚举中导入存储键名
 import { QUICK_LINKS_STORAGE_KEY } from '@/enum/quickLinks';
 
+// 映射文字颜色到安全的渐变类（避免动态类名被 Tailwind 摘除）
+const COLOR_TO_GRADIENT: Record<string, string> = {
+  'text-red-600': 'from-red-500 to-red-700',
+  'text-orange-500': 'from-orange-400 to-orange-600',
+  'text-blue-600': 'from-blue-500 to-blue-700',
+  'text-blue-500': 'from-blue-400 to-blue-600',
+  'text-gray-800': 'from-slate-700 to-slate-900'
+};
+
 export const QuickLinks: React.FC<QuickLinksProps> = (
     {
         quickLinks: propQuickLinks,
@@ -15,9 +24,7 @@ export const QuickLinks: React.FC<QuickLinksProps> = (
         onDeleteLink: propOnDeleteLink
     }
 ) => {
-    const {
-        isDark
-    } = useTheme();
+    const { isDark } = useTheme();
 
     // 使用useRef来存储从props传入的回调函数，避免在依赖数组中直接使用它们
     const onAddLinkRef = useRef(propOnAddLink);
@@ -26,10 +33,7 @@ export const QuickLinks: React.FC<QuickLinksProps> = (
     
     // 状态管理
     const [contextMenuVisible, setContextMenuVisible] = useState(false);
-    const [contextMenuPosition, setContextMenuPosition] = useState({
-        x: 0,
-        y: 0
-    });
+    const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
     const [selectedLink, setSelectedLink] = useState<QuickLink | null>(null);
     const [showLinkModal, setShowLinkModal] = useState(false);
     const [modalMode, setModalMode] = useState<"add" | "edit">("add");
@@ -50,7 +54,7 @@ export const QuickLinks: React.FC<QuickLinksProps> = (
                     };
                     
                     onUpdateLinkRef.current = (updatedLink) => {
-                        const updatedLinks = parsedLinks.map(link => 
+                        const updatedLinks = parsedLinks.map((link: QuickLink) => 
                             link.id === updatedLink.id ? updatedLink : link
                         );
                         localStorage.setItem(QUICK_LINKS_STORAGE_KEY, JSON.stringify(updatedLinks));
@@ -58,7 +62,7 @@ export const QuickLinks: React.FC<QuickLinksProps> = (
                     };
                     
                     onDeleteLinkRef.current = (linkId) => {
-                        const updatedLinks = parsedLinks.filter(link => link.id !== linkId);
+                        const updatedLinks = parsedLinks.filter((link: QuickLink) => link.id !== linkId);
                         localStorage.setItem(QUICK_LINKS_STORAGE_KEY, JSON.stringify(updatedLinks));
                         propOnDeleteLink(linkId);
                     };
@@ -147,25 +151,28 @@ export const QuickLinks: React.FC<QuickLinksProps> = (
     return (
         <div
             className="w-[calc(100%-60px)] flex flex-wrap justify-center gap-8 my-6"
-            style={{
-                margin: "8px",
-                padding: "8px"
-            }}>
-         {propQuickLinks.map(link => {
+            style={{ margin: "8px", padding: "8px" }}
+        >
+            {propQuickLinks.map((link) => {
+                const gradient = COLOR_TO_GRADIENT[link.color] || 'from-slate-500 to-slate-700';
+                const firstChar = (link.name || '').charAt(0).toUpperCase();
                 return (
                     <div
                         key={link.id}
                         className="flex flex-col items-center cursor-pointer transition-all duration-300 hover:scale-110 group"
                         onClick={() => openLink(link)}
-                         onContextMenu={e => handleContextMenu(link, e)}>
+                        onContextMenu={(e) => handleContextMenu(link, e)}
+                    >
                         <div
-                            className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-all duration-300 ${isDark ? "bg-white/10 group-hover:bg-white/20" : "bg-gray-100 group-hover:bg-gray-200"}`}>
-                            <span className={`text-2xl font-bold ${link.color}`}>
-                                {link.name && link.name.charAt(0).toUpperCase()}
+                            className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-all duration-300 bg-gradient-to-br ${gradient} shadow-sm group-hover:shadow`}
+                        >
+                            <span className="text-2xl font-bold text-white leading-none">
+                                {firstChar}
                             </span>
                         </div>
                         <span
-                            className={`text-sm font-medium truncate max-w-[100px] ${isDark ? "text-white/90" : "text-gray-700"}`}>
+                            className={`text-sm font-medium truncate max-w-[100px] ${isDark ? "text-white/90" : "text-gray-700"}`}
+                        >
                             {link.name}
                         </span>
                     </div>
@@ -176,35 +183,42 @@ export const QuickLinks: React.FC<QuickLinksProps> = (
                 onClick={() => {
                     setModalMode("add");
                     setShowLinkModal(true);
-                }}>
+                }}
+            >
                 <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-all duration-300 ${isDark ? "bg-white/10 group-hover:bg-white/20" : "bg-gray-100 group-hover:bg-gray-200"}`}>
-                    <i
-                        className={`fas fa-plus text-xl ${isDark ? "text-blue-400" : "text-blue-600"}`}></i>
+                    className="w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-all duration-300 bg-gradient-to-br from-blue-400 to-blue-600 shadow-sm group-hover:shadow"
+                >
+                    <i className="fas fa-plus text-xl text-white leading-none"></i>
                 </div>
-                <span
-                    className={`text-sm font-medium truncate max-w-[100px] ${isDark ? "text-white/90" : "text-gray-700"}`}>添加链接
-                                        </span>
+                <span className={`text-sm font-medium truncate max-w-[100px] ${isDark ? "text-white/90" : "text-gray-700"}`}>
+                    添加链接
+                </span>
             </div>
-            {contextMenuVisible && selectedLink && <div
-                className={`fixed z-50 rounded-xl shadow-xl transition-all duration-200 transform scale-100 opacity-100 ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} border overflow-hidden`}
-                style={{
-                    left: `${contextMenuPosition.x}px`,
-                    top: `${contextMenuPosition.y}px`,
-                    transform: "translate(-50%, -50%)",
-                    margin: "45px"
-                }}>
-                <button
-                    onClick={handleEditLink}
-                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${isDark ? "text-gray-300 hover:bg-gray-700" : "text-gray-700 hover:bg-gray-100"} flex items-center gap-2`}>
-                    <i className="fas fa-edit text-blue-500"></i>修改
-                                  </button>
-                <button
-                    onClick={handleDeleteLink}
-                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${isDark ? "text-gray-300 hover:bg-red-900/30 hover:text-red-400" : "text-gray-700 hover:bg-red-50 hover:text-red-600"} flex items-center gap-2`}>
-                    <i className="fas fa-trash-alt text-red-500"></i>删除
-                                  </button>
-            </div>}
+
+            {contextMenuVisible && selectedLink && (
+                <div
+                    className={`fixed z-50 rounded-xl shadow-xl transition-all duration-200 transform scale-100 opacity-100 ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} border overflow-hidden`}
+                    style={{
+                        left: `${contextMenuPosition.x}px`,
+                        top: `${contextMenuPosition.y}px`,
+                        transform: "translate(-50%, -50%)",
+                        margin: "45px",
+                    }}
+                >
+                    <button
+                        onClick={handleEditLink}
+                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${isDark ? "text-gray-300 hover:bg-gray-700" : "text-gray-700 hover:bg-gray-100"} flex items-center gap-2`}
+                    >
+                        <i className="fas fa-edit text-blue-500"></i>修改
+                    </button>
+                    <button
+                        onClick={handleDeleteLink}
+                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${isDark ? "text-gray-300 hover:bg-red-900/30 hover:text-red-400" : "text-gray-700 hover:bg-red-50 hover:text-red-600"} flex items-center gap-2`}
+                    >
+                        <i className="fas fa-trash-alt text-red-500"></i>删除
+                    </button>
+                </div>
+            )}
 
             <LinkModal
                 show={showLinkModal}

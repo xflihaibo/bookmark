@@ -67,7 +67,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({
     setLinkUrl("");
     onClose();
     
-    toast(`已${mode === "add" ? "添加" : "更新"}链接：${newLink.name}`);
+    // toast(`已${mode === "add" ? "添加" : "更新"}链接：${newLink.name}`);
   };
   
   // 处理模态框背景点击

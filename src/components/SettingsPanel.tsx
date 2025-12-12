@@ -645,32 +645,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = (
                     icon: item.icon || "",
                     description: item.description || ""
                 })).filter((item: EnterpriseLink) => item.url);
-            } else {
-                dataStructureInfo = "使用模拟数据";
-
-                links = [{
-                    name: "企业门户",
-                    url: "https://portal.company.com",
-                    icon: "fa-building",
-                    description: "公司官方门户"
-                }, {
-                    name: "内部文档",
-                    url: "https://docs.company.com",
-                    icon: "fa-file-alt",
-                    description: "团队知识库"
-                }, {
-                    name: "项目管理",
-                    url: "https://projects.company.com",
-                    icon: "fa-tasks",
-                    description: "项目进度跟踪"
-                }, {
-                    name: "团队协作",
-                    url: "https://team.company.com",
-                    icon: "fa-users",
-                    description: "团队沟通平台"
-                }];
-
-                setSyncStatus("使用模拟数据 - 远程数据源格式不符合预期");
             }
 
             if (companyImage) {

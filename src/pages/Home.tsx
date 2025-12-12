@@ -105,23 +105,21 @@ export default function Home() {
             setShowQuickLinks(savedShowQuickLinks === "true");
         }
     }, []);
-
     useEffect(()=>{
          // 监听书签数据响应
-        const handleMessage = (request:any) => {
-            // console.log('收到来自background的消息---:', request);
-            if (request.type === 'BOOKMARKS') {
-            // console.log('收到书签树数据',request);
-            try {
-                // 简化书签处理逻辑，获取书签栏节点
-                const rootNode = request?.payload?.children as BookmarkCategory[];
-                setBookmarksData(rootNode)
+    const handleMessage = (request:any) => {
+        if (request.type === 'BOOKMARKS') {
+          try {
+            // 简化书签处理逻辑，获取书签栏节点
+            const rootNode = request?.payload?.children as BookmarkCategory[];
+            setBookmarksData(rootNode)
 
-            } catch (error) {
-                console.error('处理书签数据时出错:', error);
-            }
-            }
-        };
+          } catch (error) {
+            console.error('处理书签数据时出错:', error);
+          }
+        }
+      };
+      
 
       // 注册消息监听器
       /* eslint-disable no-undef */
@@ -190,8 +188,14 @@ export default function Home() {
         setShowQuickLinks(prev => !prev);
     };
 
+    // 计算背景图：企业链接页优先使用 companyImage；否则使用用户配置背景
+    const companyImage = localStorage.getItem(UI_STORAGE_KEYS.COMPANY_IMAGE);
+    const effectiveBackground = (activeMenuItem === 'enterprise' && companyImage)
+        ? companyImage
+        : (backgroundImage || defaultBackgroundImage);
+
     const backgroundStyle = {
-        backgroundImage: backgroundImage ? `url(${backgroundImage})` : `url(${defaultBackgroundImage})`,
+        backgroundImage: `url(${effectiveBackground})`,
         backgroundSize: "cover",
         backgroundPosition: "center"
     };
@@ -304,7 +308,7 @@ export default function Home() {
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                                 placeholder={`在${searchEngine}中搜索...`}
-                                className={`w-full backdrop-blur-md rounded-full pl-24 pr-12 py-3 border focus:outline-none focus:ring-2 shadow-lg ${isDark ? "bg-white/20 border-white/18 text-white placeholder-gray-300 focus:ring-white/30" : "bg-white/80 border-gray-300 text-gray-800 placeholder-gray-500 focus:ring-blue-300"}`} />
+                                className={`w-full backdrop-blur-md rounded-full pl-24 pr-12 py-3 border focus:outline-none focus:ring-2 shadow-lg ${isDark ? "bg-white/20 border-white/18 text白 placeholder-gray-300 focus:ring-white/30" : "bg白/80 border-gray-300 text-gray-800 placeholder-gray-500 focus:ring-blue-300"}`} />
                         <button
                             type="submit"
                             className={`absolute right-5 top-1/2 transform -translate-y-1/2 ${isDark ? "text-white" : "text-gray-600"}`}>
@@ -335,8 +339,7 @@ export default function Home() {
                   <Suspense fallback={<GridSkeleton />}>
                     {activeMenuItem === "enterprise" && enterpriseLinks && enterpriseLinks.length > 0 
                         ? <EnterpriseLinksGrid enterpriseLinks={enterpriseLinks} isDark={isDark} /> 
-                        : bookmarksData?.length>0 ? <BookmarksGrid bookmarks={bookmarksData} activeCategory={activeMenuItem} /> : null
-                        }
+                        : <BookmarksGrid bookmarks={bookmarksData} activeCategory={activeMenuItem} />}
                   </Suspense>
                 </ErrorBoundary>
             </div>

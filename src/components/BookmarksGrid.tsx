@@ -167,7 +167,7 @@ export const BookmarksGrid: React.FC<BookmarksGridProps> = ({
 
     return (
         <div
-            className={`w-full max-w-[1280px] mx-auto backdrop-blur-lg rounded-2xl p-4 border shadow-xl mt-4 overflow-hidden max-h-[500px] overflow-y-auto min-h-[200px] ${isDark ? "bg-white/10 border-white/18" : "bg-white/70 border-gray-200"}`}>
+            className={`w-full max-w-[1280px] mx-auto backdrop-blur-lg rounded-2xl p-4 border shadow-xl mt-4 overflow-hidden max-h-[580px] overflow-y-auto min-h-[280px] ${isDark ? "bg-white/10 border-white/18" : "bg-white/70 border-gray-200"}`}>
             {bookmarkBarCategory && bookmarkBarCategory.map((category, idx) => {
                 return (
                     <div
