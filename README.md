@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="_media/logo.png" alt="Logo" width="150" />
+  <img src="docs/_media/logo.png" alt="Logo" width="150" />
 </p>
 
 # 千面书签
