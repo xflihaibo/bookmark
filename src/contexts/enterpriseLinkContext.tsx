@@ -24,12 +24,12 @@ export const EnterpriseLinkProvider: React.FC<EnterpriseLinkProviderProps> = ({ 
 
   // 初始化：检查并加载企业链接数据
   useEffect(() => {
-    const loadEnterpriseLinks = () => {
+     const loadEnterpriseLinks = () => {
       const hasEnterpriseLinks = localStorage.getItem(ENTERPRISE_LINK_STORAGE_KEYS.HAS) === 'true';
       const savedEnterpriseLinks = localStorage.getItem(ENTERPRISE_LINK_STORAGE_KEYS.LINKS);
       const enterpriseLinkLockedStatus = localStorage.getItem(ENTERPRISE_LINK_STORAGE_KEYS.LOCKED) === 'true';
       const savedEnterpriseLinkPassword = localStorage.getItem(ENTERPRISE_LINK_STORAGE_KEYS.PASSWORD);
-
+      
       if (hasEnterpriseLinks && savedEnterpriseLinks) {
         try {
           setEnterpriseLinks(JSON.parse(savedEnterpriseLinks) as EnterpriseLink[]);
@@ -37,11 +37,11 @@ export const EnterpriseLinkProvider: React.FC<EnterpriseLinkProviderProps> = ({ 
           console.error('Failed to load enterprise links:', error);
         }
       }
-
+      
       if (savedEnterpriseLinkPassword) {
         setEnterpriseLinkPassword(savedEnterpriseLinkPassword);
       }
-
+      
       setEnterpriseLinkLocked(enterpriseLinkLockedStatus);
     };
 
@@ -52,9 +52,9 @@ export const EnterpriseLinkProvider: React.FC<EnterpriseLinkProviderProps> = ({ 
     const handleEnterpriseLinksChanged = () => {
       loadEnterpriseLinks();
     };
-
+    
     window.addEventListener('enterpriseLinksChanged', handleEnterpriseLinksChanged);
-
+    
     return () => {
       window.removeEventListener('enterpriseLinksChanged', handleEnterpriseLinksChanged);
     };
@@ -85,7 +85,7 @@ export const EnterpriseLinkProvider: React.FC<EnterpriseLinkProviderProps> = ({ 
 
   // 删除企业链接
   const handleDeleteEnterpriseLinks = () => {
-    if (window.confirm("确定要删除所有企业链接吗？此操作无法撤销。")) {
+     if (window.confirm("确定要删除所有企业链接吗？此操作无法撤销。")) {
       localStorage.removeItem(ENTERPRISE_LINK_STORAGE_KEYS.LINKS);
       localStorage.removeItem(ENTERPRISE_LINK_STORAGE_KEYS.HAS);
       localStorage.removeItem(ENTERPRISE_LINK_STORAGE_KEYS.LOCKED);

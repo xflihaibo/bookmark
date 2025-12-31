@@ -192,31 +192,31 @@ export const QuickLinks: React.FC<QuickLinksProps> = (
                 </div>
                 <span className={`text-sm font-medium truncate max-w-[100px] ${isDark ? "text-white/90" : "text-gray-700"}`}>
                     添加链接
-                </span>
+                                        </span>
             </div>
 
             {contextMenuVisible && selectedLink && (
                 <div
-                    className={`fixed z-50 rounded-xl shadow-xl transition-all duration-200 transform scale-100 opacity-100 ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} border overflow-hidden`}
-                    style={{
-                        left: `${contextMenuPosition.x}px`,
-                        top: `${contextMenuPosition.y}px`,
-                        transform: "translate(-50%, -50%)",
+                className={`fixed z-50 rounded-xl shadow-xl transition-all duration-200 transform scale-100 opacity-100 ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} border overflow-hidden`}
+                style={{
+                    left: `${contextMenuPosition.x}px`,
+                    top: `${contextMenuPosition.y}px`,
+                    transform: "translate(-50%, -50%)",
                         margin: "45px",
                     }}
                 >
-                    <button
-                        onClick={handleEditLink}
+                <button
+                    onClick={handleEditLink}
                         className={`w-full text-left px-4 py-2 text-sm transition-colors ${isDark ? "text-gray-300 hover:bg-gray-700" : "text-gray-700 hover:bg-gray-100"} flex items-center gap-2`}
                     >
-                        <i className="fas fa-edit text-blue-500"></i>修改
-                    </button>
-                    <button
-                        onClick={handleDeleteLink}
+                    <i className="fas fa-edit text-blue-500"></i>修改
+                                  </button>
+                <button
+                    onClick={handleDeleteLink}
                         className={`w-full text-left px-4 py-2 text-sm transition-colors ${isDark ? "text-gray-300 hover:bg-red-900/30 hover:text-red-400" : "text-gray-700 hover:bg-red-50 hover:text-red-600"} flex items-center gap-2`}
                     >
-                        <i className="fas fa-trash-alt text-red-500"></i>删除
-                    </button>
+                    <i className="fas fa-trash-alt text-red-500"></i>删除
+                                  </button>
                 </div>
             )}
 

@@ -1,13 +1,13 @@
 {
   "manifest_version": 3,
   "name": "千面书签｜智能个人导航与企业链接工作台",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "一键定制你的新标签页：书签树形管理、快捷链接、企业链接工作台、主题切换、待办与日历提醒，数据本地存储，开箱即用，立即提升效率。",
   "icons": {
-    "16": "logo.png",
-    "32": "logo.png",
-    "48": "logo.png",
-    "128": "logo.png"
+    "16": "marklogo.png",
+    "32": "marklogo.png",
+    "48": "marklogo.png",
+    "128": "marklogo.png"
   },
   "chrome_url_overrides": {
     "newtab": "index.html"
@@ -15,10 +15,10 @@
   "action": {
     "default_title": "书签管理",
     "default_icon": {
-      "16": "logo.png",
-      "32": "logo.png",
-      "48": "logo.png",
-      "128": "logo.png"
+      "16": "marklogo.png",
+      "32": "marklogo.png",
+      "48": "marklogo.png",
+      "128": "marklogo.png"
     }
   },
   "background": {

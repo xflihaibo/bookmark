@@ -23,7 +23,7 @@ const SidebarInner: React.FC<SidebarProps> = (
 ) => {
     // 开发日志，建议在生产关闭
     // console.log("menuItems", menuItems, activeMenuItem)
-
+    
     const { isDark } = useTheme();
     const { enterpriseLinks, enterpriseLinkLocked, enterpriseLinkPassword, setEnterpriseLinkLocked, setEnterpriseLinkPassword, handleDeleteEnterpriseLinks } = useEnterpriseLinks();
     
@@ -50,8 +50,8 @@ const SidebarInner: React.FC<SidebarProps> = (
         const handleMouseLeave = () => setIsHovered(false);
 
         if (sidebarMode === "hover") {
-            sidebarElement.addEventListener("mouseenter", handleMouseEnter);
-            sidebarElement.addEventListener("mouseleave", handleMouseLeave);
+        sidebarElement.addEventListener("mouseenter", handleMouseEnter);
+        sidebarElement.addEventListener("mouseleave", handleMouseLeave);
         } else {
             // 非 hover 模式下，确保悬停状态为 false，避免无意义渲染
             setIsHovered(false);
@@ -94,7 +94,7 @@ const SidebarInner: React.FC<SidebarProps> = (
                 setShowUnlockModal(true);
             } else {
                 if (id !== activeMenuItem) {
-                    setActiveMenuItem(id);
+                setActiveMenuItem(id);
                 }
             }
         }

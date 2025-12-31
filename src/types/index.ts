@@ -115,17 +115,25 @@ export interface ThemeSettingsProps {
   toggleShowQuickLinks: () => void;
 }
 
+export interface InvalidBookmarkInfo {
+  url: string;
+  title: string;
+  id?: string;
+  path: string;
+}
+
 export interface AIBookmarksSettingsProps {
   isDark: boolean;
   isAICategorizing: boolean;
   isChecking404: boolean;
-  invalidLinks: string[];
+  invalidLinks: InvalidBookmarkInfo[];
   hiddenBookmarks: string[];
+  checkProgress: { completed: number; total: number } | null;
   handleAICategorize: () => void;
   handleCheck404: () => void;
-  handleHideBookmark: (link: string) => void;
-  handleDeleteBookmark: (link: string) => void;
+  handleDeleteBookmark: (bookmarkInfo: InvalidBookmarkInfo) => void;
   handleUnhideBookmark: (bookmark: string) => void;
+  bookmarks: BookmarkCategory[];
 }
 
 export interface EnterpriseLinksSettingsProps {
@@ -148,6 +156,9 @@ export interface SettingsPanelProps {
   setBackgroundImage: React.Dispatch<React.SetStateAction<string | null>>;
   sidebarMode: "always" | "hover";
   setSidebarMode: React.Dispatch<React.SetStateAction<"always" | "hover">>;
+  showQuickLinks: boolean;
+  toggleShowQuickLinks: () => void;
+  bookmarks: BookmarkCategory[];
 }
 
 export interface LockModalProps {

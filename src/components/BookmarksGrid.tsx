@@ -12,7 +12,7 @@ export const BookmarksGrid: React.FC<BookmarksGridProps> = ({
     const { isDark } = useTheme();
     // todo 添加当前tab 需要过滤的Id[]信息
     // let bookmarkBarCategory=transformNestedData(bookmarks,[])
-    // console.log(bookmarks,activeCategory)
+    // console.log("BookmarksGrid:",bookmarks,activeCategory)
 
     // 状态管理
     const [bookmarkBarCategory,setBookmarkBarCategory]=useState<BookmarkCategory[]>([])
@@ -23,9 +23,15 @@ export const BookmarksGrid: React.FC<BookmarksGridProps> = ({
     
 
       const getData=(hideCategory?: string[])=>{
-        let hideCategoryStage=hideCategory||hiddenCategories[activeCategory] || [];
-        let bookmarkBarCategory=transformNestedData(bookmarks,hideCategoryStage)
-        setBookmarkBarCategory(bookmarkBarCategory)
+        try{
+            let hideCategoryStage=hideCategory||hiddenCategories[activeCategory] || [];
+            // console.log('hideCategoryStage',hideCategoryStage)
+            let bookmarkBarCategory=transformNestedData(bookmarks,hideCategoryStage)
+            // console.log('bookmarkBarCategory',bookmarks,bookmarkBarCategory)
+            setBookmarkBarCategory(bookmarkBarCategory)
+        }catch(error){
+            console.error('Failed to get data', error)
+        }
     }
 
     // 菜单引用
@@ -33,24 +39,6 @@ export const BookmarksGrid: React.FC<BookmarksGridProps> = ({
     // 每个标题元素的引用
     const categoryTitleRefs = useRef<{[key: string]: HTMLElement | null}>({});
 
-    // 加载本地存储的隐藏设置
-    useEffect(() => {
-        const savedHiddenCategories = localStorage.getItem(UI_STORAGE_KEYS.HIDDEN_BOOKMARK_CATEGORIES);
-        // console.log('activeCategory', savedHiddenCategories)
-        if (savedHiddenCategories) {
-            try {
-                let hiddenCategoriesStage=JSON.parse(savedHiddenCategories)
-                setHiddenCategories(hiddenCategoriesStage);
-                getData(hiddenCategoriesStage[activeCategory] || [])
-            } catch (error) {
-                console.error('Failed to load hidden categories from localStorage', error);
-            }
-        }else{
-            setHiddenCategories({});
-            getData([]) 
-        }
-
-    }, [activeCategory]);
 
     // 保存隐藏设置到本地存储
     useEffect(() => {
@@ -77,6 +65,26 @@ export const BookmarksGrid: React.FC<BookmarksGridProps> = ({
             document.removeEventListener('click', handleClickOutside);
         };
     }, []);
+
+
+    // 加载本地存储的隐藏设置
+    useEffect(() => {
+        const savedHiddenCategories = localStorage.getItem(UI_STORAGE_KEYS.HIDDEN_BOOKMARK_CATEGORIES);
+        // console.log('activeCategory', savedHiddenCategories)
+        if (savedHiddenCategories) {
+            try {
+                let hiddenCategoriesStage=JSON.parse(savedHiddenCategories)
+                setHiddenCategories(hiddenCategoriesStage);
+                getData(hiddenCategoriesStage[activeCategory] || [])
+            } catch (error) {
+                console.error('Failed to load hidden categories from localStorage', error);
+            }
+        }else{
+            setHiddenCategories({});
+            getData([]) 
+        }
+
+    }, [activeCategory]);
 
     // 监听隐藏分类变更事件（来自管理模态保存），就地刷新数据
     useEffect(() => {
@@ -164,7 +172,7 @@ export const BookmarksGrid: React.FC<BookmarksGridProps> = ({
             </a>
         );
     };
-
+    if(!bookmarkBarCategory || bookmarkBarCategory.length === 0) return null;
     return (
         <div
             className={`w-full max-w-[1280px] mx-auto backdrop-blur-lg rounded-2xl p-4 border shadow-xl mt-4 overflow-hidden max-h-[580px] overflow-y-auto min-h-[280px] ${isDark ? "bg-white/10 border-white/18" : "bg-white/70 border-gray-200"}`}>

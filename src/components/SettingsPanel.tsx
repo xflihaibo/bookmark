@@ -1,10 +1,26 @@
-import { ThemeSettingsProps, AIBookmarksSettingsProps, EnterpriseLinksSettingsProps, EnterpriseLink } from "@/types";
+import { ThemeSettingsProps, AIBookmarksSettingsProps, EnterpriseLinksSettingsProps, EnterpriseLink, BookmarkCategory, InvalidBookmarkInfo } from "@/types";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useTheme } from "@/hooks/useTheme";
 import { presetBackgrounds } from "@/enum/backgrounds";
 import { UI_STORAGE_KEYS } from "@/enum/ui";
 import { useEnterpriseLinks } from "@/hooks/useEnterpriseLinks";
+
+// Chrome Extension API 类型声明
+declare const chrome: {
+    runtime: {
+        sendMessage: (message: any, responseCallback?: (response: any) => void) => void;
+        onMessage: {
+            addListener: (callback: (message: any) => void) => void;
+            removeListener: (callback: (message: any) => void) => void;
+        };
+        lastError?: { message: string };
+    };
+    bookmarks: {
+        search: (query: { url?: string }, callback: (results: Array<{ id?: string; url?: string; title?: string }>) => void) => void;
+        remove: (id: string, callback?: () => void) => void;
+    };
+};
 
 function ThemeSettings(
     {
@@ -145,8 +161,8 @@ function ThemeSettings(
                 <div className="mb-6">
                     <h4
                         className={`font-medium mb-3 text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}>选择预设背景</h4>
-                    <div className="grid grid-cols-5 gap-3">
-                        {presetBackgrounds.map((imageUrl, index) => <div
+                    <div className="grid grid-cols-4 gap-3">
+                        {presetBackgrounds.slice(0, 8).map((imageUrl, index) => <div
                             key={index}
                             className={`rounded-lg overflow-hidden cursor-pointer transition-all duration-300 transform hover:scale-[1.03] shadow-md ${backgroundImage === imageUrl ? "ring-2 ring-blue-500 shadow-blue-500/20" : "ring-2 ring-transparent hover:ring-gray-400/30"}`}
                             onClick={() => setBackground(imageUrl)}
@@ -195,11 +211,12 @@ function AIBookmarksSettings(
         isChecking404,
         invalidLinks,
         hiddenBookmarks,
+        checkProgress,
         handleAICategorize,
         handleCheck404,
-        handleHideBookmark,
         handleDeleteBookmark,
-        handleUnhideBookmark
+        handleUnhideBookmark,
+        bookmarks: _bookmarks // 使用下划线前缀表示未使用但保留在接口中
     }: AIBookmarksSettingsProps
 ) {
     return (
@@ -227,29 +244,59 @@ function AIBookmarksSettings(
                     onClick={handleCheck404}
                     disabled={isChecking404}
                     className={`py-2 px-4 rounded-lg transition-colors ${isChecking404 ? `${isDark ? "bg-gray-700 text-gray-400" : "bg-gray-200 text-gray-500"}` : `${isDark ? "bg-orange-600 hover:bg-orange-500 text-white" : "bg-orange-500 hover:bg-orange-600 text-white"}`}`}>
-                    {isChecking404 ? "检测中..." : "检查无效链接"}
+                    {isChecking404 
+                        ? (checkProgress 
+                            ? `检测中... (${checkProgress.completed}/${checkProgress.total})` 
+                            : "检测中...")
+                        : "检查无效链接"}
                 </button>
+                {checkProgress && (
+                    <div className="mt-2">
+                        <div className={`w-full h-2 rounded-full overflow-hidden ${isDark ? "bg-gray-700" : "bg-gray-200"}`}>
+                            <div 
+                                className={`h-full transition-all duration-300 ${isDark ? "bg-orange-500" : "bg-orange-400"}`}
+                                style={{ width: `${(checkProgress.completed / checkProgress.total) * 100}%` }}
+                            />
+                        </div>
+                        <p className={`text-xs mt-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                            进度: {checkProgress.completed} / {checkProgress.total} ({Math.round((checkProgress.completed / checkProgress.total) * 100)}%)
+                        </p>
+                    </div>
+                )}
                 <p className={`text-sm mt-2 ${isDark ? "text-gray-400" : "text-gray-600"}`}>扫描并识别无法访问的书签链接
                                     </p>
             </div>
             {}
             {invalidLinks.length > 0 && <div
-                className="mb-6 p-4 rounded-lg border bg-red-900/20 border-red-800 text-white">
-                <h4 className="font-medium mb-2 text-red-300">检测到 {invalidLinks.length}个无效链接
-                                    </h4>
-                <div className="space-y-2">
+                className={`mb-6 p-4 rounded-lg border ${isDark ? "bg-red-950/40 border-red-700" : "bg-red-50 border-red-200"}`}>
+                <h4 className={`font-semibold mb-3 text-base ${isDark ? "text-red-300" : "text-red-700"}`}>
+                    <i className="fas fa-exclamation-triangle mr-2"></i>
+                    检测到 {invalidLinks.length} 个无效链接
+                </h4>
+                <div className={`max-h-96 overflow-y-auto space-y-2 pr-2 ${isDark ? "scrollbar-thin scrollbar-thumb-red-800 scrollbar-track-gray-800" : "scrollbar-thin scrollbar-thumb-red-200 scrollbar-track-gray-100"}`}>
                     {invalidLinks.map(
-                        (link, index) => <div key={index} className="flex items-center justify-between">
-                            <span className="text-sm text-red-200">{link}</span>
-                            <div className="flex gap-2">
+                        (bookmarkInfo, index) => <div 
+                            key={index} 
+                            className={`p-3 rounded ${isDark ? "bg-gray-800/50 hover:bg-gray-800/70" : "bg-white hover:bg-gray-50"} transition-colors`}>
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                    <div className={`font-medium mb-1 ${isDark ? "text-gray-100" : "text-gray-900"}`}>
+                                        {bookmarkInfo.title}
+                                    </div>
+                                    <div className={`text-xs mb-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                                        <i className="fas fa-folder mr-1"></i>
+                                        {bookmarkInfo.path}
+                                    </div>
+                                    <div className={`text-xs font-mono break-all ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                                        {bookmarkInfo.url}
+                                    </div>
+                                </div>
                                 <button
-                                    onClick={() => handleHideBookmark(link)}
-                                    className="text-xs py-1 px-2 rounded bg-gray-700 hover:bg-gray-600 text-gray-300">隐藏
-                                                                    </button>
-                                <button
-                                    onClick={() => handleDeleteBookmark(link)}
-                                    className="text-xs py-1 px-2 rounded bg-red-800/50 hover:bg-red-800 text-red-300">删除
-                                                                    </button>
+                                    onClick={() => handleDeleteBookmark(bookmarkInfo)}
+                                    className={`text-xs py-1.5 px-3 rounded font-medium transition-colors flex-shrink-0 ${isDark ? "bg-red-700 hover:bg-red-600 text-white" : "bg-red-500 hover:bg-red-600 text-white"}`}>
+                                    <i className="fas fa-trash mr-1"></i>
+                                    删除
+                                </button>
                             </div>
                         </div>
                     )}
@@ -408,6 +455,7 @@ export interface SettingsPanelProps {
     setSidebarMode: React.Dispatch<React.SetStateAction<"always" | "hover">>;
     showQuickLinks: boolean;
     toggleShowQuickLinks: () => void;
+    bookmarks: BookmarkCategory[];
 }
 
 export const SettingsPanel: React.FC<SettingsPanelProps> = (
@@ -419,7 +467,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = (
         sidebarMode,
         setSidebarMode,
         showQuickLinks,
-        toggleShowQuickLinks
+        toggleShowQuickLinks,
+        bookmarks
     }
 ) => {
     const {
@@ -433,8 +482,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = (
     const [activeTab, setActiveTab] = useState<"theme" | "ai-bookmarks" | "enterprise">("theme");
     const [isAICategorizing, setIsAICategorizing] = useState(false);
     const [isChecking404, setIsChecking404] = useState(false);
-    const [invalidLinks, setInvalidLinks] = useState<string[]>([]);
+    const [invalidLinks, setInvalidLinks] = useState<Array<{ url: string; title: string; id?: string; path: string }>>([]);
     const [hiddenBookmarks, setHiddenBookmarks] = useState<string[]>([]);
+    const [checkProgress, setCheckProgress] = useState<{ completed: number; total: number } | null>(null);
     const [cdnUrl, setCdnUrl] = useState("");
     const [isSyncing, setIsSyncing] = useState(false);
     const [syncStatus, setSyncStatus] = useState("");
@@ -449,6 +499,24 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = (
             setCdnUrl(savedCdnUrl);
         }
     }, [show]);
+
+    // 监听链接检测进度
+    useEffect(() => {
+        const messageListener = (message: any) => {
+            if (message.type === 'CHECK_LINKS_PROGRESS') {
+                setCheckProgress({
+                    completed: message.completed || 0,
+                    total: message.total || 0
+                });
+            }
+        };
+
+        chrome.runtime.onMessage.addListener(messageListener);
+
+        return () => {
+            chrome.runtime.onMessage.removeListener(messageListener);
+        };
+    }, []);
 
     if (!show)
         return null;
@@ -511,31 +579,150 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = (
         }, 2000);
     };
 
-    const handleCheck404 = () => {
-        setIsChecking404(true);
-
-        setTimeout(() => {
-            const mockInvalidLinks = ["电影先生", "蓝光影视", "yz..."];
-            setInvalidLinks(mockInvalidLinks);
-            setIsChecking404(false);
-
-            if (mockInvalidLinks.length > 0) {
-                toast(`检测完成，发现 ${mockInvalidLinks.length} 个无效链接`);
-            } else {
-                toast("所有链接都正常");
+    // 递归提取所有书签信息（URL、标题、ID、路径）
+    const extractBookmarkInfo = (bookmarks: BookmarkCategory[]): Array<{ url: string; title: string; id?: string; path: string }> => {
+        const bookmarkInfos: Array<{ url: string; title: string; id?: string; path: string }> = [];
+        
+        const traverse = (items: BookmarkCategory[], currentPath: string = '') => {
+            for (const item of items) {
+                // 构建当前路径
+                const itemTitle = item.title || item.category || '未命名';
+                const newPath = currentPath ? `${currentPath} / ${itemTitle}` : itemTitle;
+                
+                // 如果当前项有 URL，添加到列表
+                if (item.url && typeof item.url === 'string' && item.url.trim()) {
+                    bookmarkInfos.push({
+                        url: item.url.trim(),
+                        title: itemTitle,
+                        id: item.id,
+                        path: currentPath || '根目录'
+                    });
+                }
+                
+                // 如果有 children，递归处理
+                if (item.children && Array.isArray(item.children)) {
+                    traverse(item.children, newPath);
+                }
+                
+                // 如果有 links，也处理
+                if (item.links && Array.isArray(item.links)) {
+                    for (const link of item.links) {
+                        if (link.url && typeof link.url === 'string' && link.url.trim()) {
+                            bookmarkInfos.push({
+                                url: link.url.trim(),
+                                title: link.name || link.title || '未命名链接',
+                                id: link.id,
+                                path: newPath
+                            });
+                        }
+                    }
+                }
             }
-        }, 2500);
+        };
+        
+        traverse(bookmarks);
+        return bookmarkInfos;
     };
 
-    const handleHideBookmark = (link: string) => {
-        setHiddenBookmarks(prev => [...prev, link]);
-        setInvalidLinks(prev => prev.filter(item => item !== link));
-        toast("书签已隐藏");
+    const handleCheck404 = () => {
+        if (!bookmarks || bookmarks.length === 0) {
+            toast("没有可检测的书签");
+            return;
+        }
+
+        // 提取所有书签信息
+        const bookmarkInfos = extractBookmarkInfo(bookmarks);
+        
+        if (bookmarkInfos.length === 0) {
+            toast("未找到可检测的链接");
+            return;
+        }
+
+        // 提取 URL 列表用于检测
+        const urls = bookmarkInfos.map(info => info.url);
+
+        setIsChecking404(true);
+        setInvalidLinks([]);
+        setCheckProgress({ completed: 0, total: urls.length });
+
+        // 发送到后台脚本进行检测
+        chrome.runtime.sendMessage(
+            {
+                action: 'CHECK_LINKS',
+                urls: urls
+            },
+            (response: { success?: boolean; invalidLinks?: string[]; error?: string } | undefined) => {
+                setIsChecking404(false);
+                setCheckProgress(null);
+
+                if (chrome.runtime.lastError) {
+                    console.error('发送消息失败:', chrome.runtime.lastError);
+                    toast.error('检测失败: ' + chrome.runtime.lastError.message);
+                    return;
+                }
+
+                if (response && response.success) {
+                    const invalidUrls = response.invalidLinks || [];
+                    // 根据无效的 URL 找到对应的书签信息
+                    const invalidBookmarks = bookmarkInfos.filter(info => 
+                        invalidUrls.includes(info.url)
+                    );
+                    setInvalidLinks(invalidBookmarks);
+                    
+                    if (invalidBookmarks.length > 0) {
+                        toast(`检测完成，发现 ${invalidBookmarks.length} 个无效链接`);
+                    } else {
+                        toast("所有链接都正常");
+                    }
+                } else {
+                    toast.error('检测失败: ' + (response?.error || '未知错误'));
+                }
+            }
+        );
     };
 
-    const handleDeleteBookmark = (link: string) => {
-        setInvalidLinks(prev => prev.filter(item => item !== link));
-        toast("书签已删除");
+    const handleDeleteBookmark = async (bookmarkInfo: InvalidBookmarkInfo) => {
+        if (!bookmarkInfo.id) {
+            // 如果没有 ID，尝试通过 URL 查找书签
+            chrome.bookmarks.search({ url: bookmarkInfo.url }, (results: Array<{ id?: string; url?: string; title?: string }>) => {
+                if (results && results.length > 0) {
+                    // 删除找到的所有匹配的书签
+                    let deletedCount = 0;
+                    const totalToDelete = results.length;
+                    
+                    results.forEach((bookmark: { id?: string; url?: string; title?: string }) => {
+                        if (bookmark.id) {
+                            chrome.bookmarks.remove(bookmark.id, () => {
+                                deletedCount++;
+                                if (chrome.runtime.lastError) {
+                                    console.error('删除书签失败:', chrome.runtime.lastError);
+                                    toast.error('删除书签失败: ' + chrome.runtime.lastError.message);
+                                } else if (deletedCount === totalToDelete) {
+                                    // 所有书签都删除完成后，从列表中移除
+                                    setInvalidLinks(prev => prev.filter(item => item.url !== bookmarkInfo.url));
+                                    toast.success(`已删除: ${bookmarkInfo.title}`);
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    // 找不到书签，只从列表中移除
+                    setInvalidLinks(prev => prev.filter(item => item.url !== bookmarkInfo.url));
+                    toast("书签已从列表中移除（未找到对应的书签）");
+                }
+            });
+        } else {
+            // 直接使用 ID 删除
+            chrome.bookmarks.remove(bookmarkInfo.id, () => {
+                if (chrome.runtime.lastError) {
+                    console.error('删除书签失败:', chrome.runtime.lastError);
+                    toast.error('删除书签失败: ' + chrome.runtime.lastError.message);
+                } else {
+                    setInvalidLinks(prev => prev.filter(item => item.url !== bookmarkInfo.url));
+                    toast.success(`已删除: ${bookmarkInfo.title}`);
+                }
+            });
+        }
     };
 
     const handleUnhideBookmark = (bookmark: string) => {
@@ -783,11 +970,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = (
                         isChecking404={isChecking404}
                         invalidLinks={invalidLinks}
                         hiddenBookmarks={hiddenBookmarks}
+                        checkProgress={checkProgress}
                         handleAICategorize={handleAICategorize}
                         handleCheck404={handleCheck404}
-                        handleHideBookmark={handleHideBookmark}
                         handleDeleteBookmark={handleDeleteBookmark}
-                        handleUnhideBookmark={handleUnhideBookmark} />}
+                        handleUnhideBookmark={handleUnhideBookmark}
+                        bookmarks={bookmarks} />}
                     {}
                     {activeTab === "enterprise" && <EnterpriseLinksSettings
                         isDark={isDark}

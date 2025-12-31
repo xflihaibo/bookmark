@@ -99,44 +99,81 @@ export default function Home() {
         if (savedBackground) {
             setBackgroundImage(savedBackground);
         }
-        // 加载快捷链接显示设置
+         // 加载快捷链接显示设置
         const savedShowQuickLinks = localStorage.getItem(UI_STORAGE_KEYS.SHOW_QUICK_LINKS);
-        if (savedShowQuickLinks !== null) {
-            setShowQuickLinks(savedShowQuickLinks === "true");
-        }
+         if (savedShowQuickLinks !== null) {
+             setShowQuickLinks(savedShowQuickLinks === "true");
+         }
     }, []);
-    useEffect(()=>{
-         // 监听书签数据响应
-    const handleMessage = (request:any) => {
-        if (request.type === 'BOOKMARKS') {
-          try {
-            // 简化书签处理逻辑，获取书签栏节点
-            const rootNode = request?.payload?.children as BookmarkCategory[];
-            setBookmarksData(rootNode)
+    useEffect(() => {
+        // console.log('书签数据响应:useEffect');
+        // 监听书签数据响应
+        const handleMessage = (request: any) => {
+            // console.log('书签数据响应:handleMessage', request);
+            if (request.type === 'BOOKMARKS') {
+                try {
+                    // console.log('书签数据响应:', request);
+                    const rootNode = request?.payload?.children as BookmarkCategory[];
+                    if (rootNode && Array.isArray(rootNode)) {
+                        setBookmarksData(rootNode);
+                    }
+                } catch (error) {
+                    console.error('处理书签数据时出错:', error);
+                }
+            }
+        };
 
-          } catch (error) {
-            console.error('处理书签数据时出错:', error);
-          }
+        // 注册消息监听器 (处理来自 background 的自发更新，如书签改变时)
+        // @ts-ignore
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+            // @ts-ignore
+            chrome.runtime.onMessage.addListener(handleMessage);
         }
-      };
-      
 
-      // 注册消息监听器
-      /* eslint-disable no-undef */
-      chrome.runtime.onMessage.addListener(handleMessage);
-      chrome.runtime.sendMessage({ action: "GET_BOOKMARKS" },handleMessage)
-      
-       // 注册消息监听器
-       /* eslint-disable no-undef */
-    
-      
-      // 清理函数
-      return () => {
-        /* eslint-disable no-undef */
-        chrome.runtime.onMessage.removeListener(handleMessage);
-      };
-      
-    },[])
+        // 主动请求函数
+        const fetchBookmarks = (retryCount = 0) => {
+            // @ts-ignore
+            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+                // @ts-ignore
+                chrome.runtime.sendMessage({ action: "GET_BOOKMARKS" }, (response: any) => {
+                    // @ts-ignore
+                    if (chrome.runtime.lastError) {
+                        // @ts-ignore
+                        console.warn(`获取书签请求失败 (重试 ${retryCount}):`, chrome.runtime.lastError.message);
+                        if (retryCount < 3) {
+                            setTimeout(() => fetchBookmarks(retryCount + 1), 500);
+                        }
+                        return;
+                    }
+
+                    if (response && response.type === 'BOOKMARKS' && response.success) {
+                       
+                        const rootNode = response.payload?.children as BookmarkCategory[];
+                        
+                        if (rootNode && Array.isArray(rootNode)) {
+                            // console.log('书签数据响应:___fetchBookmarks', rootNode);
+                            setBookmarksData(rootNode);
+                        }
+                    } else if (retryCount < 3) {
+                        // 如果响应不符合预期，尝试重试
+                        console.warn(`获取书签响应异常 (重试 ${retryCount}):`, response);
+                        setTimeout(() => fetchBookmarks(retryCount + 1), 500);
+                    }
+                });
+            }
+        };
+
+        fetchBookmarks();
+
+        // 清理函数
+        return () => {
+            // @ts-ignore
+            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+                // @ts-ignore
+                chrome.runtime.onMessage.removeListener(handleMessage);
+            }
+        };
+    }, []);
 
 
 
@@ -145,7 +182,7 @@ export default function Home() {
         localStorage.setItem(UI_STORAGE_KEYS.MENU_ITEMS, JSON.stringify(menuItems));
     }, [menuItems]);
 
-    useEffect(() => {
+     useEffect(() => {
         localStorage.setItem(UI_STORAGE_KEYS.QUICK_LINKS, JSON.stringify(quickLinks));
     }, [quickLinks]);
     
@@ -153,7 +190,7 @@ export default function Home() {
     useEffect(() => {
         localStorage.setItem(UI_STORAGE_KEYS.SHOW_QUICK_LINKS, JSON.stringify(showQuickLinks));
     }, [showQuickLinks]);
-
+    
     // 缓存当前激活的菜单项，初始化时从缓存恢复，缺省为 home
     useEffect(() => {
         localStorage.setItem(UI_STORAGE_KEYS.ACTIVE_MENU_ITEM, activeMenuItem);
@@ -259,12 +296,12 @@ export default function Home() {
                 </div>
                 <ErrorBoundary fallback={<PanelSkeleton />}>
                   <Suspense fallback={<PanelSkeleton />}>
-                    <TodoPanel show={showTodoPanel} onClose={toggleTodoPanel} />
+                <TodoPanel show={showTodoPanel} onClose={toggleTodoPanel} />
                   </Suspense>
                 </ErrorBoundary>
                 <ErrorBoundary fallback={<ModalSkeleton />}>
                   <Suspense fallback={<ModalSkeleton />}>
-                    <CalendarModal show={showCalendarModal} onClose={toggleCalendarModal} />
+                <CalendarModal show={showCalendarModal} onClose={toggleCalendarModal} />
                   </Suspense>
                 </ErrorBoundary>
                 <div className="w-full max-w-2xl my-6">
@@ -320,16 +357,16 @@ export default function Home() {
                  {showQuickLinks && (
                    <ErrorBoundary fallback={<GridSkeleton />}>
                      <Suspense fallback={<GridSkeleton />}>
-                        <QuickLinks
-                            quickLinks={quickLinks}
-                            onAddLink={(newLink: QuickLink) => {
-                                setQuickLinks([...quickLinks, newLink]);
-                            }}
-                            onUpdateLink={(updatedLink: QuickLink) => {
-                                setQuickLinks(quickLinks.map(link => link.id === updatedLink.id ? updatedLink : link));
-                            }}
-                            onDeleteLink={(linkId: number) => {
-                                setQuickLinks(quickLinks.filter(link => link.id !== linkId));
+                     <QuickLinks
+                         quickLinks={quickLinks}
+                         onAddLink={(newLink: QuickLink) => {
+                             setQuickLinks([...quickLinks, newLink]);
+                         }}
+                         onUpdateLink={(updatedLink: QuickLink) => {
+                             setQuickLinks(quickLinks.map(link => link.id === updatedLink.id ? updatedLink : link));
+                         }}
+                         onDeleteLink={(linkId: number) => {
+                             setQuickLinks(quickLinks.filter(link => link.id !== linkId));
                             }}
                         />
                      </Suspense>
@@ -339,31 +376,32 @@ export default function Home() {
                   <Suspense fallback={<GridSkeleton />}>
                     {activeMenuItem === "enterprise" && enterpriseLinks && enterpriseLinks.length > 0 
                         ? <EnterpriseLinksGrid enterpriseLinks={enterpriseLinks} isDark={isDark} /> 
-                        : <BookmarksGrid bookmarks={bookmarksData} activeCategory={activeMenuItem} />}
+                        : bookmarksData && bookmarksData.length>0 ? <BookmarksGrid bookmarks={bookmarksData} activeCategory={activeMenuItem} /> :''}
                   </Suspense>
                 </ErrorBoundary>
             </div>
             <ErrorBoundary fallback={<ModalSkeleton />}>
               <Suspense fallback={<ModalSkeleton />}>
-                <SettingsPanel
-                    show={showSettingsPanel}
-                    onClose={() => setShowSettingsPanel(false)}
-                    backgroundImage={backgroundImage}
-                    setBackgroundImage={setBackgroundImage}
-                    sidebarMode={sidebarMode}
-                    setSidebarMode={setSidebarMode}
-                    showQuickLinks={showQuickLinks}
-                    toggleShowQuickLinks={toggleShowQuickLinks} />
+            <SettingsPanel
+                show={showSettingsPanel}
+                onClose={() => setShowSettingsPanel(false)}
+                backgroundImage={backgroundImage}
+                setBackgroundImage={setBackgroundImage}
+                sidebarMode={sidebarMode}
+                setSidebarMode={setSidebarMode}
+                showQuickLinks={showQuickLinks}
+                    toggleShowQuickLinks={toggleShowQuickLinks}
+                    bookmarks={bookmarksData} />
               </Suspense>
             </ErrorBoundary>
             <ErrorBoundary fallback={<ModalSkeleton />}>
               <Suspense fallback={<ModalSkeleton />}>
-                <MenuModal
-                    show={showMenuModal}
-                    onClose={() => setShowMenuModal(false)}
-                    onAdd={handleAddMenuItem}
-                    onUpdate={() => {}}
-                    mode="add" />
+            <MenuModal
+                show={showMenuModal}
+                onClose={() => setShowMenuModal(false)}
+                onAdd={handleAddMenuItem}
+                onUpdate={() => {}}
+                mode="add" />
               </Suspense>
             </ErrorBoundary>
         </div>
