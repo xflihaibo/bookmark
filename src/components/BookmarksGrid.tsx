@@ -98,15 +98,23 @@ export const BookmarksGrid: React.FC<BookmarksGridProps> = ({
         return () => window.removeEventListener('hiddenBookmarkCategoriesChanged', handleHiddenCategoriesChanged);
     }, [activeCategory]);
 
-    // 处理右键菜单显示 - 精确计算菜单位置
+    // 处理右键菜单显示 - 采用最稳定的相对坐标方案
     const handleContextMenu = (e: React.MouseEvent, category: string) => {
         e.preventDefault();
         e.stopPropagation();
-        // 精确设置菜单位置在标题下方
-        setContextMenuPosition({
-            left: 20,
-            top: 40
-        });
+        
+        // 获取鼠标点击位置相对于 BookmarksGrid 容器的坐标
+        // 使用 closest 确保找到正确的容器
+        const container = (e.currentTarget as HTMLElement).closest('.bookmarks-grid-container');
+        if (container) {
+            const rect = container.getBoundingClientRect();
+            // 考虑滚动高度，确保在滚动后位置依然正确
+            setContextMenuPosition({
+                left: e.clientX - rect.left,
+                top: e.clientY - rect.top + container.scrollTop
+            });
+        }
+        
         setSelectedCategory(category);
         setContextMenuVisible(true);
     };
@@ -125,21 +133,6 @@ export const BookmarksGrid: React.FC<BookmarksGridProps> = ({
         }
         setContextMenuVisible(false);
     };
-    
-    // 精确计算并调整菜单位置，确保在标题下方且不超出视口
-    useEffect(() => {
-        if (contextMenuRef.current && contextMenuVisible && selectedCategory) {
-            // 强制重新渲染以获取最新的DOM位置
-            requestAnimationFrame(() => {
-                const menuElement = contextMenuRef.current;
-                if (menuElement ) {                    
-                    // 应用最终计算的位置
-                    menuElement.style.left = `20px`;
-                    menuElement.style.top = `40px`;
-                }
-            });
-        }
-    }, [contextMenuVisible, selectedCategory]);
 
     // 确保所有书签数据正确展示
     if (!bookmarks || bookmarks.length === 0) {
@@ -175,7 +168,7 @@ export const BookmarksGrid: React.FC<BookmarksGridProps> = ({
     if(!bookmarkBarCategory || bookmarkBarCategory.length === 0) return null;
     return (
         <div
-            className={`w-full max-w-[1280px] mx-auto backdrop-blur-lg rounded-2xl p-4 border shadow-xl mt-4 overflow-hidden max-h-[580px] overflow-y-auto min-h-[280px] ${isDark ? "bg-white/10 border-white/18" : "bg-white/70 border-gray-200"}`}>
+            className={`bookmarks-grid-container relative w-full max-w-[1280px] mx-auto backdrop-blur-lg rounded-2xl p-4 border shadow-xl mt-4 overflow-hidden max-h-[580px] overflow-y-auto min-h-[280px] ${isDark ? "bg-white/10 border-white/18" : "bg-white/70 border-gray-200"}`}>
             {bookmarkBarCategory && bookmarkBarCategory.map((category, idx) => {
                 return (
                     <div
@@ -198,14 +191,15 @@ export const BookmarksGrid: React.FC<BookmarksGridProps> = ({
                     </div>
                 );
             })}
-            {/* 右键菜单 - 精确显示在标题下方 */}
+            {/* 右键菜单 - 精确显示在鼠标点击位置 */}
             {contextMenuVisible && selectedCategory && activeCategory && (
                 <div
                     ref={contextMenuRef}
-                    className={`fixed z-50 rounded-xl shadow-xl transition-all duration-200 transform scale-100 opacity-100 ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} border overflow-hidden w-[160px]`}
+                    className={`absolute z-[100] rounded-xl shadow-xl transition-all duration-200 transform scale-100 opacity-100 ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} border overflow-hidden w-[160px]`}
                     style={{
                         left: `${contextMenuPosition.left}px`,
-                        top: `${contextMenuPosition.top}px`
+                        top: `${contextMenuPosition.top}px`,
+                        position: 'absolute'
                     }}>
                     <button
                         onClick={handleHideCategory}
